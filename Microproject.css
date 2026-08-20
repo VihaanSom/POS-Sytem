@@ -1,0 +1,33 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+.jumbotron {
+    background-image:url('Images/image_hotel.png');
+    background-size: cover;
+    color: #e6dede;
+    text-align: center;
+    padding: 300px 20px;
+}
+.menu-item {
+    margin-bottom: 20px;
+}
+.carousel-img {
+    max-height: 500px; /* Adjust this value as needed for perfect screen viewing */
+    margin: auto; /* Center the images horizontally */
+}
+#menu, #contact {
+    opacity: 0; /* Hide initially */
+    transition: opacity 1s ease-in-out; /* Animation transition */
+    padding: 20px 0; /* Example padding */
+}
+.about-content {
+    font-family: Arial, sans-serif; /* Specify the desired font family */
+    font-size: 16px; /* Adjust the font size */
+    line-height: 1.6; /* Adjust the line height */
+    color: #333; /* Set the font color */
+    font-size: 50;
+    /* Additional styles if needed */
+}
