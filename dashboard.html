@@ -3,184 +3,607 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DashPoint - Manager Dashboard</title>
+    <title>DashPoint. - Restaurant POS Dashboard</title>
     <link rel="icon" type="image/png" href="assets/logo.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
-    <div class="dashboard-layout">
-        <!-- Sidebar -->
+    <div class="pos-app">
+        <!-- 1. LEFT NAVIGATION SIDEBAR -->
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <a href="index.html" class="logo-link">
-                    <img src="assets/logo.png" alt="DashPoint Logo" onerror="this.src='https://via.placeholder.com/40x40/2563eb/ffffff?text=DP'">
-                    <span>DashPoint</span>
+            <div class="brand-container">
+                <a href="index.html" class="brand-logo">
+                    <span class="brand-text">DashPoint<span class="brand-dot">.</span></span>
                 </a>
             </div>
-            <nav class="sidebar-nav">
-                <a href="#overview" class="nav-item active" data-target="overview">
-                    <span class="icon">📊</span> Overview
+
+            <nav class="sidebar-menu">
+                <a href="#menu" class="nav-link active" data-view="menu">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+                    </span>
+                    <span class="nav-label">Menu</span>
                 </a>
-                <a href="#reservations" class="nav-item" data-target="reservations">
-                    <span class="icon">🪑</span> Reservations
+                <a href="#dashboard" class="nav-link" data-view="dashboard">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    </span>
+                    <span class="nav-label">Dashboard</span>
                 </a>
-                <a href="#menu-management" class="nav-item" data-target="menu-management">
-                    <span class="icon">🍔</span> Menu Management
+                <a href="#orders" class="nav-link" data-view="orders">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    </span>
+                    <span class="nav-label">Orders</span>
+                    <span class="nav-badge" id="sidebar-order-count">3</span>
                 </a>
-                <a href="index.html" class="nav-item logout-btn">
-                    <span class="icon">🚪</span> Log Out
+                <a href="#tables" class="nav-link" data-view="tables">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </span>
+                    <span class="nav-label">Customers</span>
+                </a>
+                <a href="#analytics" class="nav-link" data-view="analytics">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    </span>
+                    <span class="nav-label">Analytics</span>
+                </a>
+                <a href="#chat" class="nav-link" data-view="chat">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </span>
+                    <span class="nav-label">Chat</span>
+                </a>
+                <a href="#settings" class="nav-link" data-view="settings">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    </span>
+                    <span class="nav-label">Setting</span>
                 </a>
             </nav>
+
+            <div class="sidebar-footer">
+                <a href="index.html" class="logout-link">
+                    <span class="nav-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    </span>
+                    <span>Exit to Website</span>
+                </a>
+            </div>
         </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
+        <!-- 2. MAIN CENTER CONTENT AREA -->
+        <main class="main-viewport">
+            <!-- TOP BAR -->
             <header class="topbar">
-                <h2>Welcome, Manager</h2>
-                <div class="user-profile">
-                    <div class="avatar">M</div>
+                <div class="topbar-title-area">
+                    <h1 class="page-heading" id="page-heading">Menu</h1>
+                </div>
+
+                <div class="topbar-search">
+                    <div class="search-input-wrapper">
+                        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="menu-search-input" placeholder="Search" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="topbar-actions">
+                    <button class="icon-btn notification-btn" id="notif-toggle" title="Notifications">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        <span class="notif-indicator"></span>
+                    </button>
+
+                    <div class="user-profile-pill">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" alt="Easton Cox" class="user-avatar">
+                        <span class="user-name">Easton Cox</span>
+                        <svg class="dropdown-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
                 </div>
             </header>
 
-            <div class="content-sections">
-                <!-- Overview Section -->
-                <section id="overview" class="section-pane active">
-                    <h3 class="section-title">Restaurant Overview</h3>
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <h4>Total Tables</h4>
-                            <p class="stat-value" id="total-tables-stat">20</p>
-                        </div>
-                        <div class="stat-card">
-                            <h4>Occupied Tables</h4>
-                            <p class="stat-value text-primary" id="occupied-tables-stat">0</p>
-                        </div>
-                        <div class="stat-card">
-                            <h4>Vacant Tables</h4>
-                            <p class="stat-value text-success" id="vacant-tables-stat">20</p>
-                        </div>
-                    </div>
-
-                    <div class="restaurant-details card mt-4">
-                        <h4>Restaurant Information</h4>
-                        <div class="details-grid mt-2">
-                            <div><strong>Name:</strong> DashPoint Grand</div>
-                            <div><strong>Location:</strong> 123 Main Street</div>
-                            <div><strong>Status:</strong> <span class="badge badge-success">Open</span></div>
-                            <div><strong>Cuisines:</strong> Multi-Cuisine</div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Reservations Section -->
-                <section id="reservations" class="section-pane">
-                    <h3 class="section-title">Table Reservations</h3>
-                    <div class="reservations-layout">
-                        <!-- Add Booking Form -->
-                        <div class="card booking-form-card">
-                            <h4>New Booking</h4>
-                            <form id="booking-form" class="mt-3">
-                                <div class="input-group">
-                                    <label for="customer-name">Customer Name</label>
-                                    <input type="text" id="customer-name" required placeholder="John Doe">
-                                </div>
-                                <div class="row">
-                                    <div class="input-group">
-                                        <label for="guest-count">Number of Guests</label>
-                                        <input type="number" id="guest-count" min="1" max="20" required placeholder="2">
-                                    </div>
-                                    <div class="input-group">
-                                        <label for="booking-time">Time</label>
-                                        <input type="time" id="booking-time" required>
-                                    </div>
-                                </div>
-                                <button type="submit" class="btn btn-primary w-100">Add Booking</button>
-                            </form>
-                        </div>
-
-                        <!-- Bookings List -->
-                        <div class="card bookings-list-card">
-                            <h4>Current Bookings</h4>
-                            <div class="bookings-container mt-3" id="bookings-container">
-                                <!-- Bookings will be injected here via JS -->
-                                <p class="text-muted text-center" id="no-bookings-msg">No current bookings.</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Menu Management Section -->
-                <section id="menu-management" class="section-pane">
-                    <h3 class="section-title">Menu Management</h3>
+            <!-- VIEW PANES CONTAINER -->
+            <div class="view-content-wrapper">
+                
+                <!-- VIEW 1: POS MENU VIEW (Matches DASH.webp) -->
+                <section class="view-pane active" id="view-menu">
                     
-                    <div class="card add-dish-card mb-4">
-                        <h4>Add Custom Dish</h4>
-                        <form id="add-dish-form" class="mt-3 row align-items-end">
-                            <div class="input-group col">
-                                <label for="dish-name">Dish Name</label>
-                                <input type="text" id="dish-name" required placeholder="e.g. Classic Burger">
+                    <!-- SECTION: ORDER LISTS (Active Tables) -->
+                    <div class="section-block">
+                        <div class="section-header">
+                            <h2 class="section-title">Order Lists</h2>
+                            <button class="see-all-btn" id="btn-see-all-orders">See All &rarr;</button>
+                        </div>
+
+                        <div class="order-cards-scroll" id="order-lists-carousel">
+                            <!-- Card 1: Active Primary (Blue Theme) -->
+                            <div class="order-card card-primary active" data-table="T6" data-customer="James Hall" data-items="4">
+                                <div class="table-badge">T6</div>
+                                <div class="order-details">
+                                    <div class="customer-row">
+                                        <span class="customer-name">James Hall</span>
+                                        <span class="status-pill status-ready">Ready</span>
+                                    </div>
+                                    <div class="items-status">4 Items &rarr; Ready to Serve</div>
+                                </div>
                             </div>
-                            <div class="input-group col">
-                                <label for="dish-category">Category</label>
-                                <select id="dish-category" required>
-                                    <option value="American">American</option>
-                                    <option value="Chinese">Chinese</option>
-                                    <option value="Indian">Indian</option>
-                                    <option value="Mexican">Mexican</option>
-                                    <option value="Desserts">Drinks & Desserts</option>
-                                </select>
+
+                            <!-- Card 2 -->
+                            <div class="order-card" data-table="T7" data-customer="John Dukes" data-items="3">
+                                <div class="table-badge">T7</div>
+                                <div class="order-details">
+                                    <div class="customer-row">
+                                        <span class="customer-name">John Dukes</span>
+                                        <span class="status-pill status-process">in process</span>
+                                    </div>
+                                    <div class="items-status">3 Items &rarr; Kitchen</div>
+                                </div>
                             </div>
-                            <div class="input-group col">
-                                <label for="dish-price">Price ($)</label>
-                                <input type="number" id="dish-price" step="0.01" min="0" required placeholder="9.99">
+
+                            <!-- Card 3 -->
+                            <div class="order-card" data-table="T8" data-customer="Paula Mora" data-items="7">
+                                <div class="table-badge">T8</div>
+                                <div class="order-details">
+                                    <div class="customer-row">
+                                        <span class="customer-name">Paula Mora</span>
+                                        <span class="status-pill status-process">in process</span>
+                                    </div>
+                                    <div class="items-status">7 Items &rarr; Kitchen</div>
+                                </div>
                             </div>
-                            <div class="col-auto">
-                                <button type="submit" class="btn btn-primary">Add Dish</button>
+
+                            <!-- Add Quick Order Card -->
+                            <button class="order-card add-order-card" id="btn-quick-new-order" title="Open New Table Order">
+                                <div class="add-icon">+</div>
+                                <span>New Order</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SECTION: CHOOSE CATEGORY -->
+                    <div class="section-block">
+                        <div class="section-header">
+                            <h2 class="section-title">Choose Category</h2>
+                            <button class="see-all-btn" id="btn-see-all-categories">See All &rarr;</button>
+                        </div>
+
+                        <div class="category-grid" id="category-picker">
+                            <button class="category-card active" data-category="all">
+                                <div class="cat-icon-wrap cat-icon-all">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/3075/3075977.png" alt="All" class="cat-img">
+                                </div>
+                                <span class="cat-name">All</span>
+                            </button>
+
+                            <button class="category-card" data-category="pizza">
+                                <div class="cat-icon-wrap cat-icon-pizza">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/1404/1404945.png" alt="Pizza" class="cat-img">
+                                </div>
+                                <span class="cat-name">Pizza</span>
+                            </button>
+
+                            <button class="category-card" data-category="burger">
+                                <div class="cat-icon-wrap cat-icon-burger">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/877/877951.png" alt="Burger" class="cat-img">
+                                </div>
+                                <span class="cat-name">Burger</span>
+                            </button>
+
+                            <button class="category-card" data-category="salads">
+                                <div class="cat-icon-wrap cat-icon-salads">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/2515/2515228.png" alt="Salads" class="cat-img">
+                                </div>
+                                <span class="cat-name">Salads</span>
+                            </button>
+
+                            <button class="category-card" data-category="pastas">
+                                <div class="cat-icon-wrap cat-icon-pastas">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/1147/1147805.png" alt="Pastas" class="cat-img">
+                                </div>
+                                <span class="cat-name">Pastas</span>
+                            </button>
+
+                            <button class="category-card" data-category="drinks">
+                                <div class="cat-icon-wrap cat-icon-drinks">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/2405/2405479.png" alt="Drinks" class="cat-img">
+                                </div>
+                                <span class="cat-name">Drinks</span>
+                            </button>
+
+                            <button class="category-card" data-category="sweets">
+                                <div class="cat-icon-wrap cat-icon-sweets">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/992/992717.png" alt="Sweets" class="cat-img">
+                                </div>
+                                <span class="cat-name">Sweets</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SECTION: SPECIAL MENU FOR YOU (DISH CARDS) -->
+                    <div class="section-block">
+                        <div class="section-header">
+                            <h2 class="section-title">Special Menu For You</h2>
+                            <div class="section-header-actions">
+                                <button class="btn-sm btn-outline" id="btn-open-dish-modal">+ Add Custom Dish</button>
                             </div>
+                        </div>
+
+                        <!-- 4-Column Grid matching DASH.webp -->
+                        <div class="dishes-grid" id="dishes-container">
+                            <!-- Injected dynamically by dashboard.js -->
+                        </div>
+                    </div>
+
+                    <!-- QUICK LINKS TO EXISTING CUISINE FILES -->
+                    <div class="section-block cuisine-quicklinks-section">
+                        <div class="section-header">
+                            <h2 class="section-title">Explore Specific Cuisine Catalogs</h2>
+                        </div>
+                        <div class="cuisine-chips-grid">
+                            <a href="POS_American.html" class="cuisine-chip">
+                                <span>🍔</span> American Menu
+                            </a>
+                            <a href="POS_Chinese.html" class="cuisine-chip">
+                                <span>🍜</span> Chinese Menu
+                            </a>
+                            <a href="POS_Indian.html" class="cuisine-chip">
+                                <span>🍛</span> Indian Menu
+                            </a>
+                            <a href="POS_Mexican.html" class="cuisine-chip">
+                                <span>🌮</span> Mexican Menu
+                            </a>
+                            <a href="POS_veg_starters.html" class="cuisine-chip">
+                                <span>🥗</span> Veg Starters
+                            </a>
+                            <a href="POS_soup_salad.html" class="cuisine-chip">
+                                <span>🥣</span> Soup & Salad
+                            </a>
+                            <a href="POS_Drinks_Desserts.html" class="cuisine-chip">
+                                <span>🍰</span> Drinks & Desserts
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 2: DASHBOARD OVERVIEW -->
+                <section class="view-pane" id="view-dashboard">
+                    <div class="overview-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-icon-wrap kpi-blue">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                            </div>
+                            <div class="kpi-info">
+                                <span class="kpi-label">Today's Revenue</span>
+                                <h3 class="kpi-value" id="kpi-revenue">$1,428.50</h3>
+                                <span class="kpi-trend positive">+14.2% vs yesterday</span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="kpi-icon-wrap kpi-green">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            </div>
+                            <div class="kpi-info">
+                                <span class="kpi-label">Total Orders</span>
+                                <h3 class="kpi-value" id="kpi-orders">38</h3>
+                                <span class="kpi-trend positive">+8 new orders</span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="kpi-icon-wrap kpi-amber">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                            </div>
+                            <div class="kpi-info">
+                                <span class="kpi-label">Active Tables</span>
+                                <h3 class="kpi-value" id="kpi-occupied-tables">3 / 20</h3>
+                                <span class="kpi-sub" id="kpi-vacant-tables">17 Vacant Tables</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-widgets-grid mt-4">
+                        <div class="card widget-card">
+                            <h3 class="widget-title">Restaurant Information</h3>
+                            <div class="restaurant-info-box">
+                                <div class="info-item"><strong>Restaurant:</strong> <span>DashPoint Grand Multicuisine</span></div>
+                                <div class="info-item"><strong>Location:</strong> <span>742 Evergreen Terrace</span></div>
+                                <div class="info-item"><strong>Manager on Duty:</strong> <span>Easton Cox</span></div>
+                                <div class="info-item"><strong>Current Status:</strong> <span class="badge badge-success">Open for Dine-In & Takeaway</span></div>
+                            </div>
+                        </div>
+
+                        <div class="card widget-card">
+                            <div class="widget-header">
+                                <h3 class="widget-title">Quick Actions</h3>
+                            </div>
+                            <div class="quick-action-btns">
+                                <button class="btn btn-primary" onclick="switchNavTab('tables')">Book a Table</button>
+                                <button class="btn btn-outline" onclick="openDishModal()">Add New Dish</button>
+                                <button class="btn btn-outline" onclick="switchNavTab('orders')">View Active Orders</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 3: ORDERS VIEW -->
+                <section class="view-pane" id="view-orders">
+                    <div class="card">
+                        <div class="widget-header">
+                            <h3 class="widget-title">Active Restaurant Orders</h3>
+                            <button class="btn btn-primary btn-sm" id="btn-new-order-tab">+ Create Order</button>
+                        </div>
+                        <div class="orders-table-wrapper mt-3">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Table</th>
+                                        <th>Customer</th>
+                                        <th>Items</th>
+                                        <th>Total</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orders-table-body">
+                                    <!-- Injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 4: TABLES & RESERVATIONS (CUSTOMERS) -->
+                <section class="view-pane" id="view-tables">
+                    <div class="tables-view-layout">
+                        <!-- Table Occupancy Grid -->
+                        <div class="card">
+                            <div class="widget-header">
+                                <div>
+                                    <h3 class="widget-title">Table Floor Map (20 Tables)</h3>
+                                    <p class="text-muted text-sm">Click any table to view or start an order</p>
+                                </div>
+                                <div class="table-legend">
+                                    <span class="legend-item"><span class="legend-dot dot-vacant"></span> Vacant (<span id="legend-vacant-count">17</span>)</span>
+                                    <span class="legend-item"><span class="legend-dot dot-occupied"></span> Occupied (<span id="legend-occupied-count">3</span>)</span>
+                                </div>
+                            </div>
+                            <div class="tables-map-grid mt-3" id="tables-map-grid">
+                                <!-- 20 interactive table cards generated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Reservation Booking Form & List -->
+                        <div class="card">
+                            <h3 class="widget-title">Reserve a Table</h3>
+                            <form id="reservation-form" class="mt-3">
+                                <div class="form-group">
+                                    <label for="res-name">Customer Name</label>
+                                    <input type="text" id="res-name" placeholder="e.g. Sarah Jenkins" required>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="res-table">Table #</label>
+                                        <select id="res-table" required>
+                                            <!-- Dynamically populated with vacant tables -->
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="res-guests">Guests</label>
+                                        <input type="number" id="res-guests" min="1" max="12" value="2" required>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="res-time">Booking Time</label>
+                                    <input type="time" id="res-time" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 mt-2">Confirm Reservation</button>
+                            </form>
+
+                            <div class="active-reservations-box mt-4">
+                                <h4 class="text-sm font-bold text-muted">Upcoming Reservations</h4>
+                                <div class="reservations-list mt-2" id="reservations-list">
+                                    <!-- Injected by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 5: ANALYTICS -->
+                <section class="view-pane" id="view-analytics">
+                    <div class="card">
+                        <h3 class="widget-title">Sales & Performance Analytics</h3>
+                        <p class="text-muted">Real-time daily POS transaction breakdown</p>
+                        <div class="analytics-metrics-grid mt-4">
+                            <div class="metric-item">
+                                <span class="metric-title">Average Ticket Size</span>
+                                <h2 class="metric-number">$46.80</h2>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-title">Most Popular Cuisine</span>
+                                <h2 class="metric-number">American Burgers</h2>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-title">Dine-In vs Takeaway</span>
+                                <h2 class="metric-number">72% / 28%</h2>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 6: CHAT -->
+                <section class="view-pane" id="view-chat">
+                    <div class="card chat-card">
+                        <h3 class="widget-title">Kitchen & Staff Communication</h3>
+                        <div class="chat-messages" id="chat-messages">
+                            <div class="chat-msg received">
+                                <strong>Kitchen Station 1:</strong> Table 6 Italian Pasta is plated and ready for pickup!
+                            </div>
+                            <div class="chat-msg sent">
+                                <strong>Server (Easton):</strong> On my way to serve Table 6.
+                            </div>
+                        </div>
+                        <form id="chat-form" class="chat-input-row mt-3">
+                            <input type="text" id="chat-input" placeholder="Type a message to kitchen / bar..." required>
+                            <button type="submit" class="btn btn-primary">Send</button>
                         </form>
                     </div>
+                </section>
 
-                    <h4>Custom Dishes</h4>
-                    <div class="custom-dishes-grid mt-3 mb-5" id="custom-dishes-grid">
-                        <!-- Custom dishes will be injected here via JS -->
-                        <p class="text-muted" id="no-dishes-msg">No custom dishes added yet.</p>
-                    </div>
-
-                    <h4>Cuisine Categories</h4>
-                    <div class="cuisine-links-grid mt-3">
-                        <a href="POS_American.html" class="cuisine-card">
-                            <div class="icon">🍔</div>
-                            <h5>American</h5>
-                        </a>
-                        <a href="POS_Chinese.html" class="cuisine-card">
-                            <div class="icon">🍜</div>
-                            <h5>Chinese</h5>
-                        </a>
-                        <a href="POS_Indian.html" class="cuisine-card">
-                            <div class="icon">🍛</div>
-                            <h5>Indian</h5>
-                        </a>
-                        <a href="POS_Mexican.html" class="cuisine-card">
-                            <div class="icon">🌮</div>
-                            <h5>Mexican</h5>
-                        </a>
-                        <a href="POS_veg_starters.html" class="cuisine-card">
-                            <div class="icon">🥗</div>
-                            <h5>Veg Starters</h5>
-                        </a>
-                        <a href="POS_soup_salad.html" class="cuisine-card">
-                            <div class="icon">🥣</div>
-                            <h5>Soup & Salad</h5>
-                        </a>
-                        <a href="POS_Drinks_Desserts.html" class="cuisine-card">
-                            <div class="icon">🍰</div>
-                            <h5>Drinks & Desserts</h5>
-                        </a>
+                <!-- VIEW 7: SETTINGS -->
+                <section class="view-pane" id="view-settings">
+                    <div class="card max-w-xl">
+                        <h3 class="widget-title">POS Configuration & Taxes</h3>
+                        <form id="pos-settings-form" class="mt-3">
+                            <div class="form-group">
+                                <label>Tax Percentage (%)</label>
+                                <input type="number" id="setting-tax" value="10" min="0" max="30">
+                            </div>
+                            <div class="form-group">
+                                <label>Default Discount Percentage (%)</label>
+                                <input type="number" id="setting-discount" value="20" min="0" max="100">
+                            </div>
+                            <div class="form-group">
+                                <label>Currency Symbol</label>
+                                <input type="text" id="setting-currency" value="$">
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-2">Save Settings</button>
+                        </form>
                     </div>
                 </section>
+
             </div>
         </main>
+
+        <!-- 3. RIGHT BILLING & ORDER SUMMARY SIDEBAR (Matches DASH.webp) -->
+        <aside class="billing-sidebar" id="billing-sidebar">
+            <div class="billing-header">
+                <div class="table-info">
+                    <h2 class="current-table-name" id="billing-table-name">Table 6</h2>
+                    <span class="current-customer-name" id="billing-customer-name">James Hall</span>
+                </div>
+                <button class="icon-btn edit-order-btn" id="btn-edit-active-order" title="Edit Order Details">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+            </div>
+
+            <!-- Dine In / Take Away Segmented Control -->
+            <div class="order-type-selector">
+                <button class="type-btn active" data-type="dine-in">Dine In</button>
+                <button class="type-btn" data-type="take-away">Take Away</button>
+            </div>
+
+            <!-- Cart Items List -->
+            <div class="cart-items-container" id="cart-items-list">
+                <!-- Cart items dynamically rendered by JS -->
+            </div>
+
+            <!-- Price Breakdown Calculation -->
+            <div class="billing-totals-card">
+                <div class="total-row">
+                    <span class="total-label">Subtotal</span>
+                    <span class="total-val" id="bill-subtotal">$156.12</span>
+                </div>
+                <div class="total-row">
+                    <span class="total-label">Tax <span id="bill-tax-percent">10%</span></span>
+                    <span class="total-val" id="bill-tax">$15.61</span>
+                </div>
+                <div class="total-row discount-row">
+                    <span class="total-label">Discount <span id="bill-discount-percent">20%</span></span>
+                    <span class="total-val" id="bill-discount">-$31.22</span>
+                </div>
+                <div class="total-divider"></div>
+                <div class="total-row grand-total-row">
+                    <span class="total-label">Total</span>
+                    <span class="total-val grand-total" id="bill-grand-total">$140.51</span>
+                </div>
+            </div>
+
+            <!-- Payment Method Segment -->
+            <div class="payment-method-block">
+                <span class="payment-title">Payment Method</span>
+                <div class="payment-options">
+                    <button class="payment-pill active" data-method="Cash">Cash</button>
+                    <button class="payment-pill" data-method="Debit Card">Debit Card</button>
+                    <button class="payment-pill" data-method="E-Wallet">E-Wallet</button>
+                </div>
+            </div>
+
+            <!-- Pay Bills CTA -->
+            <div class="billing-action-area">
+                <button class="btn-pay-bills" id="btn-pay-bills">
+                    <span>Pay Bills</span>
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- MODAL: ADD CUSTOM DISH -->
+    <div class="modal-overlay" id="dish-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Add New Dish</h3>
+                <button class="modal-close" onclick="closeDishModal()">&times;</button>
+            </div>
+            <form id="custom-dish-form" class="modal-body">
+                <div class="form-group">
+                    <label for="modal-dish-name">Dish Name</label>
+                    <input type="text" id="modal-dish-name" placeholder="e.g. Truffle Fries" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="modal-dish-category">Category</label>
+                        <select id="modal-dish-category" required>
+                            <option value="burger">Burger</option>
+                            <option value="pizza">Pizza</option>
+                            <option value="pastas">Pastas</option>
+                            <option value="salads">Salads</option>
+                            <option value="drinks">Drinks</option>
+                            <option value="sweets">Sweets</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-dish-price">Price ($)</label>
+                        <input type="number" id="modal-dish-price" step="0.01" min="0.5" placeholder="14.99" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="modal-dish-desc">Short Description</label>
+                    <input type="text" id="modal-dish-desc" placeholder="Freshly tossed with herbs and parmesan" required>
+                </div>
+                <div class="form-group">
+                    <label for="modal-dish-img">Image URL (Optional)</label>
+                    <input type="url" id="modal-dish-img" placeholder="https://images.unsplash.com/...">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeDishModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add to Menu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: RECEIPT / BILL SUCCESS -->
+    <div class="modal-overlay" id="receipt-modal">
+        <div class="modal-card receipt-card">
+            <div class="receipt-header">
+                <div class="receipt-check-icon">✓</div>
+                <h3>Payment Completed!</h3>
+                <p class="text-muted text-sm" id="receipt-timestamp"></p>
+            </div>
+            <div class="receipt-body" id="receipt-content">
+                <!-- Dynamically filled with order items and final total -->
+            </div>
+            <div class="receipt-footer">
+                <button class="btn btn-outline w-100" onclick="window.print()">Print Receipt</button>
+                <button class="btn btn-primary w-100" onclick="closeReceiptModal()">Start Next Order</button>
+            </div>
+        </div>
     </div>
 
     <script src="dashboard.js"></script>
