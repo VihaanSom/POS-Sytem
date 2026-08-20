@@ -3,40 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClearPOS</title>
+    <title>DashPoint - Modern Point of Sale</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header>
-        <h1>ClearPOS</h1>
-        <p>Simple point of sale system</p>
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <img src="assets/logo.png" alt="DashPoint Logo" width="40" onerror="this.src='https://via.placeholder.com/40x40/2563eb/ffffff?text=DP'">
+                <span>DashPoint</span>
+            </div>
+            <div class="nav-links">
+                <a href="login.html" class="btn btn-outline">Log In</a>
+                <a href="register.html" class="btn btn-primary">Sign Up</a>
+            </div>
+        </div>
     </header>
 
     <main>
-        <section>
-            <h2>Welcome</h2>
-            <p>This is a basic POS website. It is simple and easy to use.</p>
-            <a href="#features">See Features</a>
+        <section class="hero">
+            <div class="hero-content">
+                <h1 class="animate-up">Empower Your Business with DashPoint</h1>
+                <p class="animate-up delay-1">The simple, fast, and elegant point of sale system designed to scale your operations effortlessly.</p>
+                <div class="hero-actions animate-up delay-2">
+                    <a href="register.html" class="btn btn-primary btn-lg">Get Started Free</a>
+                    <a href="#features" class="btn btn-secondary btn-lg">Explore Features</a>
+                </div>
+            </div>
         </section>
 
-        <section id="features">
-            <h2>Features</h2>
-            <ul>
-                <li>Easy interface</li>
-                <li>Fast payments</li>
-                <li>Simple inventory</li>
-                <li>Basic reports</li>
-            </ul>
+        <section id="features" class="features-section">
+            <div class="section-container">
+                <div class="section-header">
+                    <h2>Everything You Need</h2>
+                    <p>Powerful features packed in a beautiful, easy-to-use interface.</p>
+                </div>
+                
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Fast Payments</h3>
+                        <p>Process transactions in seconds with our optimized payment flow.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📦</div>
+                        <h3>Simple Inventory</h3>
+                        <p>Keep track of your stock levels in real-time with automated alerts.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h3>Basic Reports</h3>
+                        <p>Gain insights into your business performance with clear analytics.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">✨</div>
+                        <h3>Easy Interface</h3>
+                        <p>A clutter-free dashboard designed for minimal training time.</p>
+                    </div>
+                </div>
+            </div>
         </section>
 
-        <section>
-            <h2>Dashboard</h2>
-            <img src="assets/pos-dashboard.png" alt="POS dashboard" width="600">
+        <section class="dashboard-preview">
+            <div class="section-container">
+                <div class="preview-wrapper">
+                    <img src="assets/pos-dashboard.png" alt="DashPoint Dashboard Interface" class="dashboard-img" onerror="this.src='https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1200&q=80'">
+                </div>
+            </div>
         </section>
     </main>
 
     <footer>
-        <p>&copy; 2026 ClearPOS</p>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <span>DashPoint</span>
+            </div>
+            <p>&copy; 2026 DashPoint Inc. All rights reserved.</p>
+        </div>
     </footer>
 </body>
 </html>
