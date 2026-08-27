@@ -11,9 +11,53 @@
   <!-- Bootstrap JS -->
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   <style>
-    /* Some custom styles for the page */
+    /* Custom styles for the page */
     body {
       display: none; /* Initially hide the body */
+      background-color: #f8fafc;
+      color: #1e293b;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+    
+    .contact-form-card {
+      background: #ffffff;
+      padding: 2.25rem;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+      border: 1px solid #e2e8f0;
+    }
+
+    .form-control:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.15);
+    }
+
+    .form-control.is-invalid {
+      border-color: #ef4444;
+      background-color: #fffaf0;
+    }
+
+    .form-control.is-valid {
+      border-color: #10b981;
+    }
+
+    .invalid-feedback {
+      display: none;
+      font-size: 0.825rem;
+      font-weight: 500;
+      color: #ef4444;
+      margin-top: 0.35rem;
+    }
+
+    .shake-animation {
+      animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-2px, 0, 0); }
+      20%, 80% { transform: translate3d(4px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+      40%, 60% { transform: translate3d(4px, 0, 0); }
     }
   </style>
 </head>
@@ -22,97 +66,301 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="#">Restaurant</a>
+            <a class="navbar-brand font-weight-bold" href="POS_home.html">Restaurant</a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="POS_home.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="POS_menu.html">Menu</a>
+                    </li>
                     <li class="nav-item active">
-                        <a class="nav-link" href="Microproject_home.html">Home</a>
+                        <a class="nav-link" href="contact.html">Contact</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="Microproject_menu.html">Menu</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="Microproject_contact.html">Contact</a>
+                        <a class="nav-link" href="login.html">Login</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
-  <div class="container">
-    <h1 class="text-center mt-5">Contact Us</h1>
-    <div class="row">
-      <div class="col-lg-6 mx-auto contact-form">
-        <form>
-          <div class="form-group">
-            <label for="name">Name</label>
-            <input type="text" class="form-control" id="name" placeholder="Enter your name">
-          </div>
-          <div class="form-group">
-            <label for="email">Email address</label>
-            <input type="email" class="form-control" id="email" placeholder="Enter your email">
-          </div>
-          <div class="form-group">
-            <label for="message">Message</label>
-            <textarea class="form-control" id="message" rows="4" placeholder="Enter your message"></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary">Submit</button>
-        </form>
-      </div>
-    </div>
-    <div class="row mt-5">
-      <div class="col-lg-6 mx-auto">
-        <h2 class="text-center">Opening Hours</h2>
-        <ul class="list-group">
-          <li class="list-group-item">Monday: 9:00 AM - 10:00 PM</li>
-          <li class="list-group-item">Tuesday: 9:00 AM - 10:00 PM</li>
-          <li class="list-group-item">Wednesday: 9:00 AM - 10:00 PM</li>
-          <li class="list-group-item">Thursday: 9:00 AM - 10:00 PM</li>
-          <li class="list-group-item">Friday: 9:00 AM - 11:00 PM</li>
-          <li class="list-group-item">Saturday: 10:00 AM - 11:00 PM</li>
-          <li class="list-group-item">Sunday: 10:00 AM - 9:00 PM</li>
-        </ul>
-      </div>
-    </div>
 
-    <div class="row mt-5">
+  <div class="container pb-5">
+    <h1 class="text-center mt-5 font-weight-bold">Contact Us</h1>
+    <p class="text-center text-muted mb-4">Have questions or want to host a special event? Send us a message!</p>
+    
+    <div class="row">
       <div class="col-lg-6 mx-auto">
-        <h2 class="text-center">Follow Us</h2>
-        <p class="text-center">Stay updated with our latest news and offers!</p>
-        <div class="text-center">
-          <a href="https://www.facebook.com/" class="btn btn-primary mr-2">Facebook</a>
-          <a href="https://twitter.com/home" class="btn btn-info mr-2">Twitter</a>
-          <a href="https://www.instagram.com/" class="btn btn-danger">Instagram</a>
+        <div class="contact-form-card">
+          <form id="contact-form" novalidate>
+            <div class="form-group">
+              <label for="contact-name" class="font-weight-bold">Name <span class="text-danger">*</span></label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="contact-name" 
+                placeholder="Enter your name"
+                required
+                minlength="2"
+                maxlength="50"
+                pattern="^[a-zA-Z\s'-]+$"
+                aria-describedby="contact-name-error">
+              <div class="invalid-feedback" id="contact-name-error"></div>
+            </div>
+            
+            <div class="form-group">
+              <label for="contact-email" class="font-weight-bold">Email address <span class="text-danger">*</span></label>
+              <input 
+                type="email" 
+                class="form-control" 
+                id="contact-email" 
+                placeholder="Enter your email"
+                required
+                aria-describedby="contact-email-error">
+              <div class="invalid-feedback" id="contact-email-error"></div>
+            </div>
+            
+            <div class="form-group">
+              <label for="contact-message" class="font-weight-bold">Message <span class="text-danger">*</span></label>
+              <textarea 
+                class="form-control" 
+                id="contact-message" 
+                rows="4" 
+                placeholder="Write your inquiry or feedback (minimum 10 characters)..."
+                required
+                minlength="10"
+                maxlength="1000"
+                aria-describedby="contact-message-error"></textarea>
+              <div class="invalid-feedback" id="contact-message-error"></div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block font-weight-bold py-2" id="contact-submit-btn">Send Message</button>
+            
+            <div id="contact-success-alert" class="alert alert-success mt-3" style="display: none;" role="alert">
+              <strong>Thank you!</strong> Your message has been received. Our team will get back to you shortly.
+            </div>
+          </form>
         </div>
       </div>
     </div>
 
     <div class="row mt-5">
       <div class="col-lg-6 mx-auto">
-        <h2 class="text-center">Special Offer</h2>
-        <p class="text-center">
-          <span class="animated-text"><span>Get 10% off</span></span> your first order by subscribing to our newsletter!
-        </p>
-        <div class="input-group mb-3">
-          <input type="email" class="form-control" placeholder="Your Email">
-          <div class="input-group-append">
-            <button class="btn btn-outline-primary" type="button">Subscribe</button>
-          </div>
+        <h2 class="text-center font-weight-bold">Opening Hours</h2>
+        <ul class="list-group shadow-sm mt-3">
+          <li class="list-group-item d-flex justify-content-between"><span>Monday - Thursday:</span> <strong>9:00 AM - 10:00 PM</strong></li>
+          <li class="list-group-item d-flex justify-content-between"><span>Friday - Saturday:</span> <strong>9:00 AM - 11:00 PM</strong></li>
+          <li class="list-group-item d-flex justify-content-between"><span>Sunday:</span> <strong>10:00 AM - 9:00 PM</strong></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="row mt-5">
+      <div class="col-lg-6 mx-auto text-center">
+        <h2 class="font-weight-bold">Follow Us</h2>
+        <p class="text-muted">Stay updated with our latest news and special chef offerings!</p>
+        <div class="mt-3">
+          <a href="https://www.facebook.com/" target="_blank" rel="noopener" class="btn btn-primary mr-2 px-3">Facebook</a>
+          <a href="https://twitter.com/home" target="_blank" rel="noopener" class="btn btn-info mr-2 px-3 text-white">Twitter</a>
+          <a href="https://www.instagram.com/" target="_blank" rel="noopener" class="btn btn-danger px-3">Instagram</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-5">
+      <div class="col-lg-6 mx-auto">
+        <div class="card p-4 shadow-sm border-0 bg-white" style="border-radius: 16px;">
+          <h2 class="text-center font-weight-bold">Special Offer</h2>
+          <p class="text-center text-muted mb-3">
+            Get <strong>10% off</strong> your next order by subscribing to our newsletter!
+          </p>
+          <form id="newsletter-form" novalidate>
+            <div class="input-group mb-2">
+              <input 
+                type="email" 
+                class="form-control" 
+                id="newsletter-email" 
+                placeholder="Enter your email" 
+                required 
+                aria-describedby="newsletter-email-error">
+              <div class="input-group-append">
+                <button class="btn btn-primary font-weight-bold" type="submit">Subscribe</button>
+              </div>
+            </div>
+            <div class="invalid-feedback" id="newsletter-email-error"></div>
+            <div id="newsletter-success-alert" class="alert alert-success mt-2" style="display: none;" role="alert">
+              🎉 <strong>Awesome!</strong> You have successfully subscribed to our newsletter!
+            </div>
+          </form>
         </div>
       </div>
     </div>
 
   </div>
 
-  <!-- jQuery for animation -->
+  <!-- jQuery & Form Validation JS -->
   <script>
-    // jQuery code for the animation
     $(document).ready(function () {
-      // Show the body with fade-in effect after the page is fully loaded
-      $('body').fadeIn(1000).addClass('fade-in');
+      // Fade in body
+      $('body').fadeIn(600);
+
+      const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      const NAME_REGEX = /^[a-zA-Z\s'-]{2,50}$/;
+
+      function setFieldInvalid($field, $error, message) {
+        $field.addClass('is-invalid').removeClass('is-valid');
+        $error.text(message).show();
+      }
+
+      function setFieldValid($field, $error) {
+        $field.removeClass('is-invalid').addClass('is-valid');
+        $error.text('').hide();
+      }
+
+      function clearField($field, $error) {
+        $field.removeClass('is-invalid is-valid');
+        $error.text('').hide();
+      }
+
+      // --- Contact Form Logic ---
+      const $contactForm = $('#contact-form');
+      const $cName = $('#contact-name');
+      const $cEmail = $('#contact-email');
+      const $cMsg = $('#contact-message');
+
+      const $cNameErr = $('#contact-name-error');
+      const $cEmailErr = $('#contact-email-error');
+      const $cMsgErr = $('#contact-message-error');
+      const $cSuccess = $('#contact-success-alert');
+
+      function validateName(showEmpty = true) {
+        const val = $cName.val().trim();
+        if (val === '') {
+          if (showEmpty) setFieldInvalid($cName, $cNameErr, 'Please enter your name.');
+          else clearField($cName, $cNameErr);
+          return false;
+        }
+        if (val.length < 2) {
+          setFieldInvalid($cName, $cNameErr, 'Name must be at least 2 characters.');
+          return false;
+        }
+        if (!NAME_REGEX.test(val)) {
+          setFieldInvalid($cName, $cNameErr, 'Name can only contain letters, spaces, and hyphens.');
+          return false;
+        }
+        setFieldValid($cName, $cNameErr);
+        return true;
+      }
+
+      function validateEmail(showEmpty = true) {
+        const val = $cEmail.val().trim();
+        if (val === '') {
+          if (showEmpty) setFieldInvalid($cEmail, $cEmailErr, 'Please enter your email address.');
+          else clearField($cEmail, $cEmailErr);
+          return false;
+        }
+        if (!EMAIL_REGEX.test(val)) {
+          setFieldInvalid($cEmail, $cEmailErr, 'Please enter a valid email address (e.g. name@domain.com).');
+          return false;
+        }
+        setFieldValid($cEmail, $cEmailErr);
+        return true;
+      }
+
+      function validateMessage(showEmpty = true) {
+        const val = $cMsg.val().trim();
+        if (val === '') {
+          if (showEmpty) setFieldInvalid($cMsg, $cMsgErr, 'Please enter a message.');
+          else clearField($cMsg, $cMsgErr);
+          return false;
+        }
+        if (val.length < 10) {
+          setFieldInvalid($cMsg, $cMsgErr, 'Message must be at least 10 characters long.');
+          return false;
+        }
+        setFieldValid($cMsg, $cMsgErr);
+        return true;
+      }
+
+      $cName.on('input blur', () => validateName(false));
+      $cEmail.on('input blur', () => validateEmail(false));
+      $cMsg.on('input blur', () => validateMessage(false));
+
+      $contactForm.on('submit', function (e) {
+        e.preventDefault();
+        $cSuccess.hide();
+
+        const isNameValid = validateName(true);
+        const isEmailValid = validateEmail(true);
+        const isMsgValid = validateMessage(true);
+
+        if (!isNameValid || !isEmailValid || !isMsgValid) {
+          $contactForm.addClass('shake-animation');
+          setTimeout(() => $contactForm.removeClass('shake-animation'), 400);
+
+          if (!isNameValid) $cName.focus();
+          else if (!isEmailValid) $cEmail.focus();
+          else $cMsg.focus();
+          return;
+        }
+
+        // Simulate successful submission
+        const $btn = $('#contact-submit-btn');
+        $btn.prop('disabled', true).text('Sending...');
+
+        setTimeout(() => {
+          $btn.prop('disabled', false).text('Send Message');
+          $cSuccess.fadeIn();
+          $contactForm[0].reset();
+          clearField($cName, $cNameErr);
+          clearField($cEmail, $cEmailErr);
+          clearField($cMsg, $cMsgErr);
+        }, 600);
+      });
+
+      // --- Newsletter Form Logic ---
+      const $newsForm = $('#newsletter-form');
+      const $newsEmail = $('#newsletter-email');
+      const $newsErr = $('#newsletter-email-error');
+      const $newsSuccess = $('#newsletter-success-alert');
+
+      function validateNewsletter(showEmpty = true) {
+        const val = $newsEmail.val().trim();
+        if (val === '') {
+          if (showEmpty) setFieldInvalid($newsEmail, $newsErr, 'Please enter an email address to subscribe.');
+          else clearField($newsEmail, $newsErr);
+          return false;
+        }
+        if (!EMAIL_REGEX.test(val)) {
+          setFieldInvalid($newsEmail, $newsErr, 'Please enter a valid email address.');
+          return false;
+        }
+        setFieldValid($newsEmail, $newsErr);
+        return true;
+      }
+
+      $newsEmail.on('input blur', () => validateNewsletter(false));
+
+      $newsForm.on('submit', function (e) {
+        e.preventDefault();
+        $newsSuccess.hide();
+
+        if (!validateNewsletter(true)) {
+          $newsForm.addClass('shake-animation');
+          setTimeout(() => $newsForm.removeClass('shake-animation'), 400);
+          $newsEmail.focus();
+          return;
+        }
+
+        $newsSuccess.fadeIn();
+        $newsForm[0].reset();
+        clearField($newsEmail, $newsErr);
+      });
     });
   </script>
 </body>

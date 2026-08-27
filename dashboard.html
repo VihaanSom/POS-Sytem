@@ -380,26 +380,50 @@
                         <!-- Reservation Booking Form & List -->
                         <div class="card">
                             <h3 class="widget-title">Reserve a Table</h3>
-                            <form id="reservation-form" class="mt-3">
+                            <form id="reservation-form" class="mt-3" novalidate>
                                 <div class="form-group">
-                                    <label for="res-name">Customer Name</label>
-                                    <input type="text" id="res-name" placeholder="e.g. Sarah Jenkins" required>
+                                    <label for="res-name">Customer Name <span class="text-danger">*</span></label>
+                                    <input 
+                                        type="text" 
+                                        id="res-name" 
+                                        placeholder="e.g. Sarah Jenkins" 
+                                        required 
+                                        minlength="2" 
+                                        maxlength="50" 
+                                        pattern="^[a-zA-Z\s'-]+$"
+                                        aria-describedby="res-name-error">
+                                    <div class="field-error-text" id="res-name-error"></div>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="res-table">Table #</label>
-                                        <select id="res-table" required>
+                                        <label for="res-table">Table # <span class="text-danger">*</span></label>
+                                        <select id="res-table" required aria-describedby="res-table-error">
                                             <!-- Dynamically populated with vacant tables -->
                                         </select>
+                                        <div class="field-error-text" id="res-table-error"></div>
                                     </div>
                                     <div class="form-group">
-                                        <label for="res-guests">Guests</label>
-                                        <input type="number" id="res-guests" min="1" max="12" value="2" required>
+                                        <label for="res-guests">Guests (1-12) <span class="text-danger">*</span></label>
+                                        <input 
+                                            type="number" 
+                                            id="res-guests" 
+                                            min="1" 
+                                            max="12" 
+                                            step="1" 
+                                            value="2" 
+                                            required 
+                                            aria-describedby="res-guests-error">
+                                        <div class="field-error-text" id="res-guests-error"></div>
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="res-time">Booking Time</label>
-                                    <input type="time" id="res-time" required>
+                                    <label for="res-time">Booking Time <span class="text-danger">*</span></label>
+                                    <input 
+                                        type="time" 
+                                        id="res-time" 
+                                        required 
+                                        aria-describedby="res-time-error">
+                                    <div class="field-error-text" id="res-time-error"></div>
                                 </div>
                                 <button type="submit" class="btn btn-primary w-100 mt-2">Confirm Reservation</button>
                             </form>
@@ -448,8 +472,15 @@
                                 <strong>Server (Easton):</strong> On my way to serve Table 6.
                             </div>
                         </div>
-                        <form id="chat-form" class="chat-input-row mt-3">
-                            <input type="text" id="chat-input" placeholder="Type a message to kitchen / bar..." required>
+                        <form id="chat-form" class="chat-input-row mt-3" novalidate>
+                            <input 
+                                type="text" 
+                                id="chat-input" 
+                                placeholder="Type a message to kitchen / bar..." 
+                                required 
+                                minlength="1" 
+                                maxlength="500" 
+                                autocomplete="off">
                             <button type="submit" class="btn btn-primary">Send</button>
                         </form>
                     </div>
@@ -459,18 +490,44 @@
                 <section class="view-pane" id="view-settings">
                     <div class="card max-w-xl">
                         <h3 class="widget-title">POS Configuration & Taxes</h3>
-                        <form id="pos-settings-form" class="mt-3">
+                        <form id="pos-settings-form" class="mt-3" novalidate>
                             <div class="form-group">
-                                <label>Tax Percentage (%)</label>
-                                <input type="number" id="setting-tax" value="10" min="0" max="30">
+                                <label for="setting-tax">Tax Percentage (%)</label>
+                                <input 
+                                    type="number" 
+                                    id="setting-tax" 
+                                    value="10" 
+                                    min="0" 
+                                    max="30" 
+                                    step="0.1" 
+                                    required 
+                                    aria-describedby="setting-tax-error">
+                                <div class="field-error-text" id="setting-tax-error"></div>
                             </div>
                             <div class="form-group">
-                                <label>Default Discount Percentage (%)</label>
-                                <input type="number" id="setting-discount" value="20" min="0" max="100">
+                                <label for="setting-discount">Default Discount Percentage (%)</label>
+                                <input 
+                                    type="number" 
+                                    id="setting-discount" 
+                                    value="20" 
+                                    min="0" 
+                                    max="100" 
+                                    step="0.1" 
+                                    required 
+                                    aria-describedby="setting-discount-error">
+                                <div class="field-error-text" id="setting-discount-error"></div>
                             </div>
                             <div class="form-group">
-                                <label>Currency Symbol</label>
-                                <input type="text" id="setting-currency" value="$">
+                                <label for="setting-currency">Currency Symbol</label>
+                                <input 
+                                    type="text" 
+                                    id="setting-currency" 
+                                    value="$" 
+                                    required 
+                                    minlength="1" 
+                                    maxlength="3" 
+                                    aria-describedby="setting-currency-error">
+                                <div class="field-error-text" id="setting-currency-error"></div>
                             </div>
                             <button type="submit" class="btn btn-primary mt-2">Save Settings</button>
                         </form>
@@ -550,15 +607,24 @@
                 <h3>Add New Dish</h3>
                 <button class="modal-close" onclick="closeDishModal()">&times;</button>
             </div>
-            <form id="custom-dish-form" class="modal-body">
+            <form id="custom-dish-form" class="modal-body" novalidate>
                 <div class="form-group">
-                    <label for="modal-dish-name">Dish Name</label>
-                    <input type="text" id="modal-dish-name" placeholder="e.g. Truffle Fries" required>
+                    <label for="modal-dish-name">Dish Name <span class="text-danger">*</span></label>
+                    <input 
+                        type="text" 
+                        id="modal-dish-name" 
+                        placeholder="e.g. Truffle Fries" 
+                        required 
+                        minlength="2" 
+                        maxlength="60" 
+                        aria-describedby="modal-dish-name-error">
+                    <div class="field-error-text" id="modal-dish-name-error"></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="modal-dish-category">Category</label>
-                        <select id="modal-dish-category" required>
+                        <label for="modal-dish-category">Category <span class="text-danger">*</span></label>
+                        <select id="modal-dish-category" required aria-describedby="modal-dish-category-error">
+                            <option value="">Select Category</option>
                             <option value="burger">Burger</option>
                             <option value="pizza">Pizza</option>
                             <option value="pastas">Pastas</option>
@@ -566,19 +632,42 @@
                             <option value="drinks">Drinks</option>
                             <option value="sweets">Sweets</option>
                         </select>
+                        <div class="field-error-text" id="modal-dish-category-error"></div>
                     </div>
                     <div class="form-group">
-                        <label for="modal-dish-price">Price ($)</label>
-                        <input type="number" id="modal-dish-price" step="0.01" min="0.5" placeholder="14.99" required>
+                        <label for="modal-dish-price">Price ($) <span class="text-danger">*</span></label>
+                        <input 
+                            type="number" 
+                            id="modal-dish-price" 
+                            step="0.01" 
+                            min="0.5" 
+                            max="999.99" 
+                            placeholder="14.99" 
+                            required 
+                            aria-describedby="modal-dish-price-error">
+                        <div class="field-error-text" id="modal-dish-price-error"></div>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="modal-dish-desc">Short Description</label>
-                    <input type="text" id="modal-dish-desc" placeholder="Freshly tossed with herbs and parmesan" required>
+                    <label for="modal-dish-desc">Short Description <span class="text-danger">*</span></label>
+                    <input 
+                        type="text" 
+                        id="modal-dish-desc" 
+                        placeholder="Freshly tossed with herbs and parmesan" 
+                        required 
+                        minlength="5" 
+                        maxlength="200" 
+                        aria-describedby="modal-dish-desc-error">
+                    <div class="field-error-text" id="modal-dish-desc-error"></div>
                 </div>
                 <div class="form-group">
                     <label for="modal-dish-img">Image URL (Optional)</label>
-                    <input type="url" id="modal-dish-img" placeholder="https://images.unsplash.com/...">
+                    <input 
+                        type="url" 
+                        id="modal-dish-img" 
+                        placeholder="https://images.unsplash.com/..." 
+                        aria-describedby="modal-dish-img-error">
+                    <div class="field-error-text" id="modal-dish-img-error"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline" onclick="closeDishModal()">Cancel</button>
@@ -605,6 +694,9 @@
             </div>
         </div>
     </div>
+
+    <!-- TOAST NOTIFICATIONS CONTAINER -->
+    <div class="toast-container" id="toast-container"></div>
 
     <script src="dashboard.js"></script>
 </body>

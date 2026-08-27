@@ -1,8 +1,66 @@
 /**
  * DashPoint POS Dashboard Interactive Logic (DASH.webp layout with Blue Palette)
+ * Includes comprehensive HTML5 + JavaScript client-side form validation
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Helper Validation & Feedback Functions ---
+    const NAME_REGEX = /^[a-zA-Z\s'-]{2,50}$/;
+
+    function setError(inputElement, errorElement, message) {
+        if (!inputElement || !errorElement) return;
+        inputElement.classList.add('is-invalid');
+        inputElement.classList.remove('is-valid');
+        inputElement.setAttribute('aria-invalid', 'true');
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
+
+    function setSuccess(inputElement, errorElement) {
+        if (!inputElement || !errorElement) return;
+        inputElement.classList.remove('is-invalid');
+        inputElement.classList.add('is-valid');
+        inputElement.setAttribute('aria-invalid', 'false');
+        errorElement.textContent = '';
+        errorElement.style.display = 'none';
+    }
+
+    function clearStatus(inputElement, errorElement) {
+        if (!inputElement || !errorElement) return;
+        inputElement.classList.remove('is-invalid');
+        inputElement.classList.remove('is-valid');
+        inputElement.removeAttribute('aria-invalid');
+        errorElement.textContent = '';
+        errorElement.style.display = 'none';
+    }
+
+    function triggerShake(element) {
+        if (!element) return;
+        element.classList.remove('shake-animation');
+        void element.offsetWidth; // Force reflow
+        element.classList.add('shake-animation');
+    }
+
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = `toast-message toast-${type}`;
+        toast.innerHTML = `
+            <span>${message}</span>
+            <button class="toast-close-btn" title="Close">&times;</button>
+        `;
+        toast.querySelector('.toast-close-btn').addEventListener('click', () => {
+            toast.remove();
+        });
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(10px)';
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
     // --- 1. DEFAULT MENU ITEMS (Matching DASH.webp exactly) ---
     const DEFAULT_DISHES = [
         {
@@ -79,7 +137,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     ];
 
-    // --- 2. ACTIVE ORDERS STATE (Matching DASH.webp defaults) ---
+    // --- 2. POS CONFIGURATION & STATE ---
+    let savedSettings = JSON.parse(localStorage.getItem('dashpoint_settings')) || {
+        tax: 10,
+        discount: 20,
+        currency: '$'
+    };
+
+    let TAX_RATE = (savedSettings.tax || 10) / 100;
+    let DISCOUNT_RATE = (savedSettings.discount || 20) / 100;
+    let CURRENCY_SYMBOL = savedSettings.currency || '$';
+
     let activeOrders = JSON.parse(localStorage.getItem('dashpoint_orders')) || [
         {
             id: 'ORD-1006',
@@ -130,9 +198,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSearchTerm = '';
     let selectedPaymentMethod = 'Cash';
 
-    // Tax & Discount configuration
-    const TAX_RATE = 0.10; // 10%
-    const DISCOUNT_RATE = 0.20; // 20%
+    // Update logged in user name if available
+    const loggedUser = JSON.parse(localStorage.getItem('dashpoint_current_user'));
+    if (loggedUser && loggedUser.name) {
+        const userNameEl = document.querySelector('.user-name');
+        if (userNameEl) userNameEl.textContent = loggedUser.name;
+    }
 
     // --- 3. DOM ELEMENT REFERENCES ---
     const dishesContainer = document.getElementById('dishes-container');
@@ -146,7 +217,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartItemsList = document.getElementById('cart-items-list');
     const billSubtotal = document.getElementById('bill-subtotal');
     const billTax = document.getElementById('bill-tax');
+    const billTaxPercent = document.getElementById('bill-tax-percent');
     const billDiscount = document.getElementById('bill-discount');
+    const billDiscountPercent = document.getElementById('bill-discount-percent');
     const billGrandTotal = document.getElementById('bill-grand-total');
     const btnPayBills = document.getElementById('btn-pay-bills');
 
@@ -154,6 +227,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.querySelectorAll('.sidebar-menu .nav-link');
     const viewPanes = document.querySelectorAll('.view-pane');
     const pageHeading = document.getElementById('page-heading');
+
+    // Sync initial settings to form fields and labels
+    const settingTaxInput = document.getElementById('setting-tax');
+    const settingDiscountInput = document.getElementById('setting-discount');
+    const settingCurrencyInput = document.getElementById('setting-currency');
+
+    if (settingTaxInput) settingTaxInput.value = savedSettings.tax;
+    if (settingDiscountInput) settingDiscountInput.value = savedSettings.discount;
+    if (settingCurrencyInput) settingCurrencyInput.value = savedSettings.currency;
+    if (billTaxPercent) billTaxPercent.textContent = `${savedSettings.tax}%`;
+    if (billDiscountPercent) billDiscountPercent.textContent = `${savedSettings.discount}%`;
 
     // --- 4. RENDER DISHES GRID ---
     function getAllDishes() {
@@ -183,7 +267,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         filtered.forEach(dish => {
-            // Check if this dish is in current table's order
             const itemInCart = activeOrder ? activeOrder.items.find(i => i.name === dish.name) : null;
             const inOrder = !!itemInCart;
             const qty = itemInCart ? itemInCart.qty : 0;
@@ -201,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h4 class="dish-title">${dish.name}</h4>
                     <p class="dish-desc">${dish.desc}</p>
                     <div class="dish-footer">
-                        <span class="dish-price">$${dish.price.toFixed(2)}</span>
+                        <span class="dish-price">${CURRENCY_SYMBOL}${dish.price.toFixed(2)}</span>
                         ${inOrder ? `
                             <div class="counter-controls-pill">
                                 <button class="counter-btn" onclick="updateItemQuantity('${dish.name}', -1)">-</button>
@@ -267,7 +350,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         orderCarousel.appendChild(addCard);
 
-        document.getElementById('sidebar-order-count').textContent = activeOrders.length;
+        const badgeEl = document.getElementById('sidebar-order-count');
+        if (badgeEl) badgeEl.textContent = activeOrders.length;
     }
 
     // --- 6. RENDER RIGHT BILLING SIDEBAR ---
@@ -287,10 +371,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="btn btn-primary btn-sm mt-3" onclick="promptCreateNewOrder('${currentSelectedTable}')">+ Start Order</button>
                 </div>
             `;
-            billSubtotal.textContent = '$0.00';
-            billTax.textContent = '$0.00';
-            billDiscount.textContent = '$0.00';
-            billGrandTotal.textContent = '$0.00';
+            billSubtotal.textContent = `${CURRENCY_SYMBOL}0.00`;
+            billTax.textContent = `${CURRENCY_SYMBOL}0.00`;
+            billDiscount.textContent = `${CURRENCY_SYMBOL}0.00`;
+            billGrandTotal.textContent = `${CURRENCY_SYMBOL}0.00`;
             btnPayBills.disabled = true;
             btnPayBills.style.opacity = '0.5';
             return;
@@ -316,14 +400,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 <img src="${item.image}" alt="${item.name}" class="cart-thumb" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=120&q=80'">
                 <div class="cart-item-details">
                     <div class="cart-item-title">${item.name}</div>
-                    <div class="cart-item-price">$${item.price.toFixed(2)}</div>
+                    <div class="cart-item-price">${CURRENCY_SYMBOL}${item.price.toFixed(2)}</div>
                 </div>
                 <div class="cart-item-qty">
                     <button class="cart-qty-btn" onclick="updateItemQuantity('${item.name}', -1)">-</button>
                     <span class="cart-qty-val">${item.qty}</span>
                     <button class="cart-qty-btn" onclick="updateItemQuantity('${item.name}', 1)">+</button>
                 </div>
-                <div class="cart-item-total">$${itemTotal.toFixed(2)}</div>
+                <div class="cart-item-total">${CURRENCY_SYMBOL}${itemTotal.toFixed(2)}</div>
                 <button class="cart-remove-btn" onclick="removeItemFromOrder('${item.name}')" title="Remove item">&times;</button>
             `;
             cartItemsList.appendChild(row);
@@ -333,10 +417,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const discount = subtotal * DISCOUNT_RATE;
         const grandTotal = Math.max(0, subtotal + tax - discount);
 
-        billSubtotal.textContent = `$${subtotal.toFixed(2)}`;
-        billTax.textContent = `$${tax.toFixed(2)}`;
-        billDiscount.textContent = `-$${discount.toFixed(2)}`;
-        billGrandTotal.textContent = `$${grandTotal.toFixed(2)}`;
+        billSubtotal.textContent = `${CURRENCY_SYMBOL}${subtotal.toFixed(2)}`;
+        billTax.textContent = `${CURRENCY_SYMBOL}${tax.toFixed(2)}`;
+        billDiscount.textContent = `-${CURRENCY_SYMBOL}${discount.toFixed(2)}`;
+        billGrandTotal.textContent = `${CURRENCY_SYMBOL}${grandTotal.toFixed(2)}`;
     }
 
     // --- 7. CART & ORDER ACTIONS ---
@@ -377,6 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBillingSidebar();
         renderOrderCarousel();
         renderDishesGrid();
+        showToast(`Added ${dish.name} to ${activeOrder.table}`, 'info');
     };
 
     window.updateItemQuantity = function(dishName, delta) {
@@ -408,6 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBillingSidebar();
         renderOrderCarousel();
         renderDishesGrid();
+        showToast(`Removed ${dishName}`, 'info');
     };
 
     function saveOrdersToStorage() {
@@ -415,15 +501,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.promptCreateNewOrder = function(preferredTable = null) {
-        const tableNum = preferredTable || prompt('Enter Table Number (e.g. T1, T2, T9):', 'T9');
-        if (!tableNum) return;
+        let tableNum = preferredTable;
+        if (!tableNum) {
+            tableNum = prompt('Enter Table Number (e.g. T1, T2, T9, 10):', 'T9');
+            if (tableNum === null) return; // User cancelled
+            tableNum = tableNum.trim();
+        }
 
-        const formattedTable = tableNum.toUpperCase().startsWith('T') ? tableNum.toUpperCase() : 'T' + tableNum;
-        const customerName = prompt('Enter Customer Name:', 'New Guest') || 'Guest';
+        if (!tableNum) {
+            showToast('Table number is required to start an order.', 'error');
+            return;
+        }
+
+        // Validate table format
+        const cleanNum = tableNum.replace(/[^0-9]/g, '');
+        const tableInt = parseInt(cleanNum, 10);
+        if (isNaN(tableInt) || tableInt < 1 || tableInt > 20) {
+            showToast('Please enter a valid table number between T1 and T20.', 'error');
+            return;
+        }
+
+        const formattedTable = `T${tableInt}`;
+        let customerName = prompt('Enter Customer Name:', 'New Guest');
+        if (customerName === null) return;
+        customerName = customerName.trim() || 'Guest';
 
         let existing = activeOrders.find(o => o.table === formattedTable);
         if (existing) {
             currentSelectedTable = formattedTable;
+            showToast(`Switched to active order for Table ${formattedTable}`, 'info');
         } else {
             activeOrders.push({
                 id: 'ORD-' + Math.floor(1000 + Math.random() * 9000),
@@ -435,6 +541,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             currentSelectedTable = formattedTable;
             saveOrdersToStorage();
+            showToast(`Order created for Table ${formattedTable} (${customerName})`, 'success');
         }
 
         renderOrderCarousel();
@@ -486,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- 10. TABLES FLOOR MAP & RESERVATIONS ---
+    // --- 10. TABLES FLOOR MAP & RESERVATION FORM VALIDATION ---
     function renderTablesFloorMap() {
         const grid = document.getElementById('tables-map-grid');
         const selectBox = document.getElementById('res-table');
@@ -498,12 +605,19 @@ document.addEventListener('DOMContentLoaded', () => {
         let vacantCount = 0;
         let occupiedCount = 0;
 
+        // Default empty option for select
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = '-- Select Vacant Table --';
+        selectBox.appendChild(defaultOpt);
+
         for (let i = 1; i <= 20; i++) {
             const tCode = `T${i}`;
             const isOccupied = occupiedSet.has(tCode);
 
-            if (isOccupied) occupiedCount++;
-            else {
+            if (isOccupied) {
+                occupiedCount++;
+            } else {
                 vacantCount++;
                 const opt = document.createElement('option');
                 opt.value = tCode;
@@ -529,8 +643,10 @@ document.addEventListener('DOMContentLoaded', () => {
             grid.appendChild(slot);
         }
 
-        document.getElementById('legend-vacant-count').textContent = vacantCount;
-        document.getElementById('legend-occupied-count').textContent = occupiedCount;
+        const vacantCountEl = document.getElementById('legend-vacant-count');
+        const occupiedCountEl = document.getElementById('legend-occupied-count');
+        if (vacantCountEl) vacantCountEl.textContent = vacantCount;
+        if (occupiedCountEl) occupiedCountEl.textContent = occupiedCount;
 
         renderReservationsList();
     }
@@ -564,17 +680,110 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.cancelReservation = function(idx) {
+        const cancelled = reservations[idx];
         reservations.splice(idx, 1);
         localStorage.setItem('dashpoint_reservations', JSON.stringify(reservations));
         renderReservationsList();
+        if (cancelled) showToast(`Reservation for ${cancelled.name} cancelled.`, 'info');
     };
 
-    document.getElementById('reservation-form').addEventListener('submit', (e) => {
+    // --- 10.1 RESERVATION FORM JS VALIDATION ---
+    const reservationForm = document.getElementById('reservation-form');
+    const resNameInput = document.getElementById('res-name');
+    const resTableSelect = document.getElementById('res-table');
+    const resGuestsInput = document.getElementById('res-guests');
+    const resTimeInput = document.getElementById('res-time');
+
+    const resNameError = document.getElementById('res-name-error');
+    const resTableError = document.getElementById('res-table-error');
+    const resGuestsError = document.getElementById('res-guests-error');
+    const resTimeError = document.getElementById('res-time-error');
+
+    function validateResName(showEmpty = true) {
+        const val = resNameInput.value.trim();
+        if (val === '') {
+            if (showEmpty) setError(resNameInput, resNameError, 'Customer name is required.');
+            else clearStatus(resNameInput, resNameError);
+            return false;
+        }
+        if (val.length < 2) {
+            setError(resNameInput, resNameError, 'Name must be at least 2 characters.');
+            return false;
+        }
+        if (!NAME_REGEX.test(val)) {
+            setError(resNameInput, resNameError, 'Name can only contain letters, spaces, and hyphens.');
+            return false;
+        }
+        setSuccess(resNameInput, resNameError);
+        return true;
+    }
+
+    function validateResTable(showEmpty = true) {
+        const val = resTableSelect.value;
+        if (!val) {
+            if (showEmpty) setError(resTableSelect, resTableError, 'Please select a vacant table.');
+            else clearStatus(resTableSelect, resTableError);
+            return false;
+        }
+        setSuccess(resTableSelect, resTableError);
+        return true;
+    }
+
+    function validateResGuests(showEmpty = true) {
+        const val = parseInt(resGuestsInput.value, 10);
+        if (isNaN(val) || resGuestsInput.value.trim() === '') {
+            if (showEmpty) setError(resGuestsInput, resGuestsError, 'Number of guests is required.');
+            else clearStatus(resGuestsInput, resGuestsError);
+            return false;
+        }
+        if (val < 1 || val > 12) {
+            setError(resGuestsInput, resGuestsError, 'Guests must be between 1 and 12.');
+            return false;
+        }
+        setSuccess(resGuestsInput, resGuestsError);
+        return true;
+    }
+
+    function validateResTime(showEmpty = true) {
+        const val = resTimeInput.value;
+        if (!val) {
+            if (showEmpty) setError(resTimeInput, resTimeError, 'Booking time is required.');
+            else clearStatus(resTimeInput, resTimeError);
+            return false;
+        }
+        setSuccess(resTimeInput, resTimeError);
+        return true;
+    }
+
+    resNameInput.addEventListener('input', () => {
+        if (resNameInput.classList.contains('is-invalid') || resNameInput.value.length >= 2) validateResName(true);
+    });
+    resNameInput.addEventListener('blur', () => validateResName(true));
+
+    resTableSelect.addEventListener('change', () => validateResTable(true));
+    resGuestsInput.addEventListener('input', () => validateResGuests(true));
+    resTimeInput.addEventListener('input', () => validateResTime(true));
+
+    reservationForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const name = document.getElementById('res-name').value;
-        const table = document.getElementById('res-table').value;
-        const guests = document.getElementById('res-guests').value;
-        const time = document.getElementById('res-time').value;
+        const isNameValid = validateResName(true);
+        const isTableValid = validateResTable(true);
+        const isGuestsValid = validateResGuests(true);
+        const isTimeValid = validateResTime(true);
+
+        if (!isNameValid || !isTableValid || !isGuestsValid || !isTimeValid) {
+            triggerShake(reservationForm);
+            if (!isNameValid) resNameInput.focus();
+            else if (!isTableValid) resTableSelect.focus();
+            else if (!isGuestsValid) resGuestsInput.focus();
+            else resTimeInput.focus();
+            return;
+        }
+
+        const name = resNameInput.value.trim();
+        const table = resTableSelect.value;
+        const guests = parseInt(resGuestsInput.value, 10);
+        const time = resTimeInput.value;
 
         reservations.push({ name, table, guests, time });
         localStorage.setItem('dashpoint_reservations', JSON.stringify(reservations));
@@ -590,9 +799,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         saveOrdersToStorage();
 
-        e.target.reset();
+        reservationForm.reset();
+        clearStatus(resNameInput, resNameError);
+        clearStatus(resTableSelect, resTableError);
+        clearStatus(resGuestsInput, resGuestsError);
+        clearStatus(resTimeInput, resTimeError);
+
         renderTablesFloorMap();
-        alert(`Table ${table} successfully reserved for ${name}!`);
+        showToast(`Table ${table} successfully reserved for ${name}!`, 'success');
     });
 
     // --- 11. ORDERS TABLE VIEW ---
@@ -615,7 +829,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td><span class="badge badge-success">${order.table}</span></td>
                 <td>${order.customer}</td>
                 <td style="max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${itemsSummary}</td>
-                <td><strong>$${total.toFixed(2)}</strong></td>
+                <td><strong>${CURRENCY_SYMBOL}${total.toFixed(2)}</strong></td>
                 <td><span class="status-pill ${order.status === 'Ready' ? 'status-ready' : 'status-process'}">${order.status}</span></td>
                 <td>
                     <button class="btn btn-outline btn-sm" onclick="selectAndGoToOrder('${order.table}')">View</button>
@@ -641,10 +855,15 @@ document.addEventListener('DOMContentLoaded', () => {
             totalRev += sub;
         });
 
-        document.getElementById('kpi-revenue').textContent = `$${totalRev.toFixed(2)}`;
-        document.getElementById('kpi-orders').textContent = 38 + activeOrders.length;
-        document.getElementById('kpi-occupied-tables').textContent = `${activeOrders.length} / 20`;
-        document.getElementById('kpi-vacant-tables').textContent = `${20 - activeOrders.length} Vacant Tables`;
+        const revEl = document.getElementById('kpi-revenue');
+        const ordEl = document.getElementById('kpi-orders');
+        const occEl = document.getElementById('kpi-occupied-tables');
+        const vacEl = document.getElementById('kpi-vacant-tables');
+
+        if (revEl) revEl.textContent = `${CURRENCY_SYMBOL}${totalRev.toFixed(2)}`;
+        if (ordEl) ordEl.textContent = 38 + activeOrders.length;
+        if (occEl) occEl.textContent = `${activeOrders.length} / 20`;
+        if (vacEl) vacEl.textContent = `${20 - activeOrders.length} Vacant Tables`;
     }
 
     // --- 13. MODALS (ADD CUSTOM DISH & RECEIPT) ---
@@ -652,17 +871,147 @@ document.addEventListener('DOMContentLoaded', () => {
     const receiptModal = document.getElementById('receipt-modal');
 
     window.openDishModal = function() { dishModal.classList.add('active'); };
-    window.closeDishModal = function() { dishModal.classList.remove('active'); };
+    window.closeDishModal = function() {
+        dishModal.classList.remove('active');
+        clearStatus(dishNameInput, dishNameError);
+        clearStatus(dishCatSelect, dishCatError);
+        clearStatus(dishPriceInput, dishPriceError);
+        clearStatus(dishDescInput, dishDescError);
+        clearStatus(dishImgInput, dishImgError);
+    };
 
-    document.getElementById('btn-open-dish-modal').addEventListener('click', openDishModal);
+    const openDishBtn = document.getElementById('btn-open-dish-modal');
+    if (openDishBtn) openDishBtn.addEventListener('click', openDishModal);
 
-    document.getElementById('custom-dish-form').addEventListener('submit', (e) => {
+    // --- 13.1 CUSTOM DISH FORM JS VALIDATION ---
+    const customDishForm = document.getElementById('custom-dish-form');
+    const dishNameInput = document.getElementById('modal-dish-name');
+    const dishCatSelect = document.getElementById('modal-dish-category');
+    const dishPriceInput = document.getElementById('modal-dish-price');
+    const dishDescInput = document.getElementById('modal-dish-desc');
+    const dishImgInput = document.getElementById('modal-dish-img');
+
+    const dishNameError = document.getElementById('modal-dish-name-error');
+    const dishCatError = document.getElementById('modal-dish-category-error');
+    const dishPriceError = document.getElementById('modal-dish-price-error');
+    const dishDescError = document.getElementById('modal-dish-desc-error');
+    const dishImgError = document.getElementById('modal-dish-img-error');
+
+    function validateDishName(showEmpty = true) {
+        const val = dishNameInput.value.trim();
+        if (val === '') {
+            if (showEmpty) setError(dishNameInput, dishNameError, 'Dish name is required.');
+            else clearStatus(dishNameInput, dishNameError);
+            return false;
+        }
+        if (val.length < 2) {
+            setError(dishNameInput, dishNameError, 'Dish name must be at least 2 characters.');
+            return false;
+        }
+        setSuccess(dishNameInput, dishNameError);
+        return true;
+    }
+
+    function validateDishCategory(showEmpty = true) {
+        const val = dishCatSelect.value;
+        if (!val) {
+            if (showEmpty) setError(dishCatSelect, dishCatError, 'Please select a dish category.');
+            else clearStatus(dishCatSelect, dishCatError);
+            return false;
+        }
+        setSuccess(dishCatSelect, dishCatError);
+        return true;
+    }
+
+    function validateDishPrice(showEmpty = true) {
+        const val = parseFloat(dishPriceInput.value);
+        if (isNaN(val) || dishPriceInput.value.trim() === '') {
+            if (showEmpty) setError(dishPriceInput, dishPriceError, 'Price is required.');
+            else clearStatus(dishPriceInput, dishPriceError);
+            return false;
+        }
+        if (val < 0.50) {
+            setError(dishPriceInput, dishPriceError, 'Price must be at least $0.50.');
+            return false;
+        }
+        if (val > 999.99) {
+            setError(dishPriceInput, dishPriceError, 'Price cannot exceed $999.99.');
+            return false;
+        }
+        setSuccess(dishPriceInput, dishPriceError);
+        return true;
+    }
+
+    function validateDishDesc(showEmpty = true) {
+        const val = dishDescInput.value.trim();
+        if (val === '') {
+            if (showEmpty) setError(dishDescInput, dishDescError, 'Description is required.');
+            else clearStatus(dishDescInput, dishDescError);
+            return false;
+        }
+        if (val.length < 5) {
+            setError(dishDescInput, dishDescError, 'Description must be at least 5 characters long.');
+            return false;
+        }
+        setSuccess(dishDescInput, dishDescError);
+        return true;
+    }
+
+    function validateDishImg() {
+        const val = dishImgInput.value.trim();
+        if (!val) {
+            clearStatus(dishImgInput, dishImgError);
+            return true;
+        }
+        try {
+            const url = new URL(val);
+            if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+                setError(dishImgInput, dishImgError, 'URL must begin with http:// or https://');
+                return false;
+            }
+            setSuccess(dishImgInput, dishImgError);
+            return true;
+        } catch (_) {
+            setError(dishImgInput, dishImgError, 'Please enter a valid image URL.');
+            return false;
+        }
+    }
+
+    dishNameInput.addEventListener('input', () => {
+        if (dishNameInput.classList.contains('is-invalid') || dishNameInput.value.length >= 2) validateDishName(true);
+    });
+    dishNameInput.addEventListener('blur', () => validateDishName(true));
+
+    dishCatSelect.addEventListener('change', () => validateDishCategory(true));
+    dishPriceInput.addEventListener('input', () => validateDishPrice(true));
+    dishDescInput.addEventListener('input', () => {
+        if (dishDescInput.classList.contains('is-invalid') || dishDescInput.value.length >= 5) validateDishDesc(true);
+    });
+    dishImgInput.addEventListener('input', () => validateDishImg());
+
+    customDishForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const name = document.getElementById('modal-dish-name').value;
-        const category = document.getElementById('modal-dish-category').value;
-        const price = parseFloat(document.getElementById('modal-dish-price').value);
-        const desc = document.getElementById('modal-dish-desc').value;
-        const img = document.getElementById('modal-dish-img').value || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80';
+        const isNameValid = validateDishName(true);
+        const isCatValid = validateDishCategory(true);
+        const isPriceValid = validateDishPrice(true);
+        const isDescValid = validateDishDesc(true);
+        const isImgValid = validateDishImg();
+
+        if (!isNameValid || !isCatValid || !isPriceValid || !isDescValid || !isImgValid) {
+            triggerShake(customDishForm.closest('.modal-card'));
+            if (!isNameValid) dishNameInput.focus();
+            else if (!isCatValid) dishCatSelect.focus();
+            else if (!isPriceValid) dishPriceInput.focus();
+            else if (!isDescValid) dishDescInput.focus();
+            else if (!isImgValid) dishImgInput.focus();
+            return;
+        }
+
+        const name = dishNameInput.value.trim();
+        const category = dishCatSelect.value;
+        const price = parseFloat(dishPriceInput.value);
+        const desc = dishDescInput.value.trim();
+        const img = dishImgInput.value.trim() || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80';
 
         const newDish = {
             id: 'dish-' + (Date.now()),
@@ -677,24 +1026,146 @@ document.addEventListener('DOMContentLoaded', () => {
         customDishes.push(newDish);
         localStorage.setItem('dashpoint_custom_dishes', JSON.stringify(customDishes));
 
-        e.target.reset();
+        customDishForm.reset();
         closeDishModal();
         renderDishesGrid();
-        alert(`"${name}" has been added to the menu!`);
+        showToast(`"${name}" has been added to the menu!`, 'success');
     });
 
-    // Pay Bills Action
+    // --- 14. POS CONFIGURATION SETTINGS FORM VALIDATION ---
+    const posSettingsForm = document.getElementById('pos-settings-form');
+    const settingTaxError = document.getElementById('setting-tax-error');
+    const settingDiscountError = document.getElementById('setting-discount-error');
+    const settingCurrencyError = document.getElementById('setting-currency-error');
+
+    function validateSettingTax(showEmpty = true) {
+        const val = parseFloat(settingTaxInput.value);
+        if (isNaN(val) || settingTaxInput.value.trim() === '') {
+            if (showEmpty) setError(settingTaxInput, settingTaxError, 'Tax percentage is required.');
+            else clearStatus(settingTaxInput, settingTaxError);
+            return false;
+        }
+        if (val < 0 || val > 30) {
+            setError(settingTaxInput, settingTaxError, 'Tax must be between 0% and 30%.');
+            return false;
+        }
+        setSuccess(settingTaxInput, settingTaxError);
+        return true;
+    }
+
+    function validateSettingDiscount(showEmpty = true) {
+        const val = parseFloat(settingDiscountInput.value);
+        if (isNaN(val) || settingDiscountInput.value.trim() === '') {
+            if (showEmpty) setError(settingDiscountInput, settingDiscountError, 'Discount percentage is required.');
+            else clearStatus(settingDiscountInput, settingDiscountError);
+            return false;
+        }
+        if (val < 0 || val > 100) {
+            setError(settingDiscountInput, settingDiscountError, 'Discount must be between 0% and 100%.');
+            return false;
+        }
+        setSuccess(settingDiscountInput, settingDiscountError);
+        return true;
+    }
+
+    function validateSettingCurrency(showEmpty = true) {
+        const val = settingCurrencyInput.value.trim();
+        if (val === '') {
+            if (showEmpty) setError(settingCurrencyInput, settingCurrencyError, 'Currency symbol is required.');
+            else clearStatus(settingCurrencyInput, settingCurrencyError);
+            return false;
+        }
+        if (val.length > 3) {
+            setError(settingCurrencyInput, settingCurrencyError, 'Currency symbol must be 1-3 characters (e.g. $, €, £).');
+            return false;
+        }
+        setSuccess(settingCurrencyInput, settingCurrencyError);
+        return true;
+    }
+
+    settingTaxInput.addEventListener('input', () => validateSettingTax(true));
+    settingDiscountInput.addEventListener('input', () => validateSettingDiscount(true));
+    settingCurrencyInput.addEventListener('input', () => validateSettingCurrency(true));
+
+    posSettingsForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const isTaxValid = validateSettingTax(true);
+        const isDiscValid = validateSettingDiscount(true);
+        const isCurrValid = validateSettingCurrency(true);
+
+        if (!isTaxValid || !isDiscValid || !isCurrValid) {
+            triggerShake(posSettingsForm);
+            if (!isTaxValid) settingTaxInput.focus();
+            else if (!isDiscValid) settingDiscountInput.focus();
+            else settingCurrencyInput.focus();
+            return;
+        }
+
+        const newTax = parseFloat(settingTaxInput.value);
+        const newDiscount = parseFloat(settingDiscountInput.value);
+        const newCurrency = settingCurrencyInput.value.trim();
+
+        TAX_RATE = newTax / 100;
+        DISCOUNT_RATE = newDiscount / 100;
+        CURRENCY_SYMBOL = newCurrency;
+
+        savedSettings = { tax: newTax, discount: newDiscount, currency: newCurrency };
+        localStorage.setItem('dashpoint_settings', JSON.stringify(savedSettings));
+
+        if (billTaxPercent) billTaxPercent.textContent = `${newTax}%`;
+        if (billDiscountPercent) billDiscountPercent.textContent = `${newDiscount}%`;
+
+        renderBillingSidebar();
+        renderDishesGrid();
+        renderDashboardKPIs();
+        renderOrdersTableView();
+
+        showToast('POS settings saved successfully!', 'success');
+    });
+
+    // --- 15. CHAT FORM JS VALIDATION ---
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+
+    chatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const msg = chatInput.value.trim();
+        if (!msg) {
+            triggerShake(chatInput);
+            chatInput.focus();
+            return;
+        }
+
+        const msgEl = document.createElement('div');
+        msgEl.className = 'chat-msg sent';
+        msgEl.innerHTML = `<strong>You (${loggedUser ? loggedUser.name : 'Server'}):</strong> ${msg}`;
+        chatMessages.appendChild(msgEl);
+        chatInput.value = '';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Automated kitchen acknowledgment
+        setTimeout(() => {
+            const replyEl = document.createElement('div');
+            replyEl.className = 'chat-msg received';
+            replyEl.innerHTML = `<strong>Kitchen Station:</strong> Received order note: "${msg}". Processing now!`;
+            chatMessages.appendChild(replyEl);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 1200);
+    });
+
+    // --- 16. BILL PAYMENT & RECEIPT MODAL ---
     btnPayBills.addEventListener('click', () => {
         const activeOrder = getActiveOrder();
         if (!activeOrder || activeOrder.items.length === 0) {
-            alert('Cannot pay bill for an empty order!');
+            showToast('Cannot pay bill for an empty order. Please add dishes first!', 'error');
             return;
         }
 
         const subtotal = activeOrder.items.reduce((a, i) => a + (i.price * i.qty), 0);
         const tax = subtotal * TAX_RATE;
         const discount = subtotal * DISCOUNT_RATE;
-        const grandTotal = subtotal + tax - discount;
+        const grandTotal = Math.max(0, subtotal + tax - discount);
 
         document.getElementById('receipt-timestamp').textContent = new Date().toLocaleString();
         
@@ -705,7 +1176,7 @@ document.addEventListener('DOMContentLoaded', () => {
             itemsHtml += `
                 <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
                     <span>${i.name} x${i.qty}</span>
-                    <span>$${(i.price * i.qty).toFixed(2)}</span>
+                    <span>${CURRENCY_SYMBOL}${(i.price * i.qty).toFixed(2)}</span>
                 </div>
             `;
         });
@@ -714,7 +1185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <hr style="border:none; border-top:1px dashed #cbd5e1; margin:0.5rem 0;">
             <div style="display:flex; justify-content:space-between; font-weight:700; font-size:1rem; margin-top:0.5rem;">
                 <span>Total Paid</span>
-                <span style="color:#2563eb;">$${grandTotal.toFixed(2)}</span>
+                <span style="color:#2563eb;">${CURRENCY_SYMBOL}${grandTotal.toFixed(2)}</span>
             </div>
         `;
 
@@ -724,6 +1195,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Complete & clear order
         activeOrders = activeOrders.filter(o => o.table !== activeOrder.table);
         saveOrdersToStorage();
+        showToast(`Bill paid for ${activeOrder.table}!`, 'success');
     });
 
     window.closeReceiptModal = function() {
@@ -764,7 +1236,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderDishesGrid();
     });
 
-    // --- 14. INITIALIZE DASHBOARD ---
+    // --- 17. INITIALIZE DASHBOARD ---
     renderOrderCarousel();
     renderBillingSidebar();
     renderDishesGrid();
