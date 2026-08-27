@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <span>New Order</span>
         `;
         addCard.addEventListener('click', () => {
-            promptCreateNewOrder();
+            openCreateOrderModal();
         });
         orderCarousel.appendChild(addCard);
 
@@ -368,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cartItemsList.innerHTML = `
                 <div style="text-align: center; padding: 2rem 1rem; color: #94a3b8;">
                     <p style="font-weight: 600;">No active order for ${currentSelectedTable}.</p>
-                    <button class="btn btn-primary btn-sm mt-3" onclick="promptCreateNewOrder('${currentSelectedTable}')">+ Start Order</button>
+                    <button class="btn btn-primary btn-sm mt-3" onclick="openCreateOrderModal('${currentSelectedTable}')">+ Start Order</button>
                 </div>
             `;
             billSubtotal.textContent = `${CURRENCY_SYMBOL}0.00`;
@@ -500,54 +500,466 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('dashpoint_orders', JSON.stringify(activeOrders));
     }
 
-    window.promptCreateNewOrder = function(preferredTable = null) {
-        let tableNum = preferredTable;
-        if (!tableNum) {
-            tableNum = prompt('Enter Table Number (e.g. T1, T2, T9, 10):', 'T9');
-            if (tableNum === null) return; // User cancelled
-            tableNum = tableNum.trim();
+    // --- 7.1 CREATE & EDIT ORDER MODAL CONTROLLER ---
+    const orderModal = document.getElementById('order-modal');
+    const createOrderForm = document.getElementById('create-order-form');
+    const modalOrderIdInput = document.getElementById('modal-order-id');
+    const modalOrderTitle = document.getElementById('order-modal-title');
+    const modalOrderSubtitle = document.getElementById('order-modal-subtitle');
+    const modalSubmitBtnText = document.getElementById('modal-submit-btn-text');
+    const modalOrderCustomer = document.getElementById('modal-order-customer');
+    const modalOrderStatus = document.getElementById('modal-order-status');
+    const modalOrderTable = document.getElementById('modal-order-table');
+    const modalOrderGuests = document.getElementById('modal-order-guests');
+    const modalOrderPhone = document.getElementById('modal-order-phone');
+    const modalPhoneField = document.getElementById('modal-phone-field');
+    const modalDineInRow = document.getElementById('modal-dinein-row');
+    const modalOrderNotes = document.getElementById('modal-order-notes');
+    const modalOrderTypePicker = document.getElementById('modal-order-type-picker');
+    const modalDishesSelectorList = document.getElementById('modal-dishes-selector-list');
+    const modalItemsSearch = document.getElementById('modal-items-search');
+    const modalItemsTotalBadge = document.getElementById('modal-items-total-badge');
+    const modalItemsSubtotalPreview = document.getElementById('modal-items-subtotal-preview');
+
+    const modalOrderCustomerError = document.getElementById('modal-order-customer-error');
+    const modalOrderTableError = document.getElementById('modal-order-table-error');
+    const modalOrderGuestsError = document.getElementById('modal-order-guests-error');
+
+    let currentOrderModalType = 'dine-in';
+    let modalSelectedDishes = {}; // Map of { dishId: qty }
+
+    function populateModalTableOptions(selectedTable = null, editingOrderId = null) {
+        if (!modalOrderTable) return;
+        modalOrderTable.innerHTML = '';
+
+        const occupiedMap = {};
+        activeOrders.forEach(o => {
+            if (!editingOrderId || o.id !== editingOrderId) {
+                occupiedMap[o.table] = o.customer;
+            }
+        });
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = '-- Select Table (1 - 20) --';
+        modalOrderTable.appendChild(defaultOption);
+
+        let firstAvailableTable = null;
+
+        for (let i = 1; i <= 20; i++) {
+            const tableCode = `T${i}`;
+            const opt = document.createElement('option');
+            opt.value = tableCode;
+
+            if (occupiedMap[tableCode]) {
+                opt.textContent = `Table ${i} (${tableCode}) — Occupied (${occupiedMap[tableCode]})`;
+                opt.setAttribute('data-occupied', 'true');
+            } else {
+                opt.textContent = `Table ${i} (${tableCode}) — Vacant`;
+                opt.setAttribute('data-occupied', 'false');
+                if (!firstAvailableTable) firstAvailableTable = tableCode;
+            }
+
+            modalOrderTable.appendChild(opt);
         }
 
-        if (!tableNum) {
-            showToast('Table number is required to start an order.', 'error');
-            return;
+        if (selectedTable) {
+            modalOrderTable.value = selectedTable;
+        } else if (firstAvailableTable) {
+            modalOrderTable.value = firstAvailableTable;
         }
+    }
 
-        // Validate table format
-        const cleanNum = tableNum.replace(/[^0-9]/g, '');
-        const tableInt = parseInt(cleanNum, 10);
-        if (isNaN(tableInt) || tableInt < 1 || tableInt > 20) {
-            showToast('Please enter a valid table number between T1 and T20.', 'error');
-            return;
-        }
+    function renderModalDishPicker(searchTerm = '') {
+        if (!modalDishesSelectorList) return;
+        modalDishesSelectorList.innerHTML = '';
 
-        const formattedTable = `T${tableInt}`;
-        let customerName = prompt('Enter Customer Name:', 'New Guest');
-        if (customerName === null) return;
-        customerName = customerName.trim() || 'Guest';
+        const allDishes = getAllDishes();
+        const term = searchTerm.toLowerCase().trim();
 
-        let existing = activeOrders.find(o => o.table === formattedTable);
-        if (existing) {
-            currentSelectedTable = formattedTable;
-            showToast(`Switched to active order for Table ${formattedTable}`, 'info');
+        const filtered = allDishes.filter(d => {
+            return !term || d.name.toLowerCase().includes(term) || d.desc.toLowerCase().includes(term) || d.category.toLowerCase().includes(term);
+        });
+
+        if (filtered.length === 0) {
+            modalDishesSelectorList.innerHTML = `
+                <div style="text-align: center; padding: 1.25rem 0.5rem; color: #94a3b8; font-size: 0.85rem;">
+                    No dishes found matching "${searchTerm}".
+                </div>
+            `;
         } else {
-            activeOrders.push({
-                id: 'ORD-' + Math.floor(1000 + Math.random() * 9000),
-                table: formattedTable,
-                customer: customerName,
-                orderType: 'dine-in',
-                status: 'in process',
-                items: []
+            filtered.forEach(dish => {
+                const qty = modalSelectedDishes[dish.id] || 0;
+                const itemEl = document.createElement('div');
+                itemEl.className = 'modal-dish-picker-item';
+                itemEl.setAttribute('data-dish-id', dish.id);
+                itemEl.innerHTML = `
+                    <div class="modal-dish-picker-left">
+                        <img src="${dish.image}" alt="${dish.name}" class="modal-dish-thumb" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=120&q=80'">
+                        <div class="modal-dish-info">
+                            <span class="modal-dish-name">${dish.name}</span>
+                            <span class="modal-dish-meta">${dish.category} • <span class="price">${CURRENCY_SYMBOL}${dish.price.toFixed(2)}</span></span>
+                        </div>
+                    </div>
+                    <div class="modal-dish-qty-control">
+                        <button type="button" class="modal-qty-btn" onclick="updateModalDishQty('${dish.id}', -1)" title="Decrease">-</button>
+                        <span class="modal-qty-val" id="modal-dish-qty-${dish.id}">${qty}</span>
+                        <button type="button" class="modal-qty-btn" onclick="updateModalDishQty('${dish.id}', 1)" title="Increase">+</button>
+                    </div>
+                `;
+                modalDishesSelectorList.appendChild(itemEl);
             });
-            currentSelectedTable = formattedTable;
-            saveOrdersToStorage();
-            showToast(`Order created for Table ${formattedTable} (${customerName})`, 'success');
         }
 
-        renderOrderCarousel();
-        renderBillingSidebar();
-        renderDishesGrid();
-        renderTablesFloorMap();
+        updateModalOrderSummary();
+    }
+
+    window.updateModalDishQty = function(dishId, delta) {
+        const current = modalSelectedDishes[dishId] || 0;
+        const next = Math.max(0, current + delta);
+        if (next === 0) {
+            delete modalSelectedDishes[dishId];
+        } else {
+            modalSelectedDishes[dishId] = next;
+        }
+
+        const qtyEl = document.getElementById(`modal-dish-qty-${dishId}`);
+        if (qtyEl) qtyEl.textContent = next;
+
+        updateModalOrderSummary();
+    };
+
+    function updateModalOrderSummary() {
+        const allDishes = getAllDishes();
+        let totalItemsCount = 0;
+        let subtotal = 0;
+
+        for (const [id, qty] of Object.entries(modalSelectedDishes)) {
+            if (qty > 0) {
+                totalItemsCount += qty;
+                const dish = allDishes.find(d => d.id === id);
+                if (dish) {
+                    subtotal += (dish.price * qty);
+                }
+            }
+        }
+
+        if (modalItemsTotalBadge) {
+            modalItemsTotalBadge.textContent = totalItemsCount === 1 ? '1 item selected' : `${totalItemsCount} items selected`;
+        }
+        if (modalItemsSubtotalPreview) {
+            modalItemsSubtotalPreview.textContent = `${CURRENCY_SYMBOL}${subtotal.toFixed(2)}`;
+        }
+    }
+
+    function syncOrderTypeFields() {
+        if (currentOrderModalType === 'dine-in') {
+            if (modalDineInRow) modalDineInRow.style.display = 'flex';
+            if (modalPhoneField) modalPhoneField.style.display = 'none';
+        } else {
+            if (modalDineInRow) modalDineInRow.style.display = 'none';
+            if (modalPhoneField) modalPhoneField.style.display = 'block';
+        }
+    }
+
+    if (modalOrderTypePicker) {
+        modalOrderTypePicker.addEventListener('click', (e) => {
+            const btn = e.target.closest('.segment-btn');
+            if (!btn) return;
+            modalOrderTypePicker.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentOrderModalType = btn.getAttribute('data-type');
+            syncOrderTypeFields();
+            if (currentOrderModalType === 'dine-in') {
+                validateOrderTable(false);
+            } else {
+                clearStatus(modalOrderTable, modalOrderTableError);
+            }
+        });
+    }
+
+    if (modalItemsSearch) {
+        modalItemsSearch.addEventListener('input', (e) => {
+            renderModalDishPicker(e.target.value);
+        });
+    }
+
+    function validateOrderCustomer(showEmpty = true) {
+        const val = modalOrderCustomer.value.trim();
+        if (val === '') {
+            if (showEmpty) setError(modalOrderCustomer, modalOrderCustomerError, 'Customer name is required.');
+            else clearStatus(modalOrderCustomer, modalOrderCustomerError);
+            return false;
+        }
+        if (val.length < 2) {
+            setError(modalOrderCustomer, modalOrderCustomerError, 'Customer name must be at least 2 characters.');
+            return false;
+        }
+        if (!NAME_REGEX.test(val)) {
+            setError(modalOrderCustomer, modalOrderCustomerError, 'Name can only contain letters, spaces, and hyphens.');
+            return false;
+        }
+        setSuccess(modalOrderCustomer, modalOrderCustomerError);
+        return true;
+    }
+
+    function validateOrderTable(showEmpty = true) {
+        if (currentOrderModalType !== 'dine-in') return true;
+        const val = modalOrderTable.value;
+        if (!val) {
+            if (showEmpty) setError(modalOrderTable, modalOrderTableError, 'Please select a table.');
+            else clearStatus(modalOrderTable, modalOrderTableError);
+            return false;
+        }
+        setSuccess(modalOrderTable, modalOrderTableError);
+        return true;
+    }
+
+    function validateOrderGuests(showEmpty = true) {
+        if (currentOrderModalType !== 'dine-in') return true;
+        const val = parseInt(modalOrderGuests.value, 10);
+        if (isNaN(val) || modalOrderGuests.value.trim() === '') {
+            if (showEmpty) setError(modalOrderGuests, modalOrderGuestsError, 'Number of guests is required.');
+            else clearStatus(modalOrderGuests, modalOrderGuestsError);
+            return false;
+        }
+        if (val < 1 || val > 12) {
+            setError(modalOrderGuests, modalOrderGuestsError, 'Guests must be between 1 and 12.');
+            return false;
+        }
+        setSuccess(modalOrderGuests, modalOrderGuestsError);
+        return true;
+    }
+
+    if (modalOrderCustomer) {
+        modalOrderCustomer.addEventListener('input', () => {
+            if (modalOrderCustomer.classList.contains('is-invalid') || modalOrderCustomer.value.length >= 2) validateOrderCustomer(true);
+        });
+        modalOrderCustomer.addEventListener('blur', () => validateOrderCustomer(true));
+    }
+    if (modalOrderTable) modalOrderTable.addEventListener('change', () => validateOrderTable(true));
+    if (modalOrderGuests) modalOrderGuests.addEventListener('input', () => validateOrderGuests(true));
+
+    if (createOrderForm) {
+        createOrderForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const isCustomerValid = validateOrderCustomer(true);
+            const isTableValid = validateOrderTable(true);
+            const isGuestsValid = validateOrderGuests(true);
+
+            if (!isCustomerValid || !isTableValid || !isGuestsValid) {
+                triggerShake(createOrderForm.closest('.modal-card'));
+                if (!isCustomerValid) modalOrderCustomer.focus();
+                else if (!isTableValid) modalOrderTable.focus();
+                else modalOrderGuests.focus();
+                return;
+            }
+
+            const editId = modalOrderIdInput.value.trim();
+            const customerName = modalOrderCustomer.value.trim();
+            const status = modalOrderStatus.value;
+            const notes = modalOrderNotes ? modalOrderNotes.value.trim() : '';
+            const phone = modalOrderPhone ? modalOrderPhone.value.trim() : '';
+            const orderType = currentOrderModalType;
+            const guests = orderType === 'dine-in' ? parseInt(modalOrderGuests.value, 10) : 1;
+
+            let table = 'T-TO';
+            if (orderType === 'dine-in') {
+                table = modalOrderTable.value;
+            } else if (orderType === 'take-away') {
+                table = 'Takeaway';
+            } else {
+                table = 'Delivery';
+            }
+
+            // Build selected items list
+            const allDishes = getAllDishes();
+            const orderItems = [];
+            for (const [id, qty] of Object.entries(modalSelectedDishes)) {
+                if (qty > 0) {
+                    const dish = allDishes.find(d => d.id === id);
+                    if (dish) {
+                        orderItems.push({
+                            id: dish.id,
+                            name: dish.name,
+                            price: dish.price,
+                            qty: qty,
+                            image: dish.image
+                        });
+                    }
+                }
+            }
+
+            if (editId) {
+                // Edit existing order
+                const existingOrderIndex = activeOrders.findIndex(o => o.id === editId);
+                if (existingOrderIndex !== -1) {
+                    activeOrders[existingOrderIndex] = {
+                        ...activeOrders[existingOrderIndex],
+                        customer: customerName,
+                        status: status,
+                        orderType: orderType,
+                        table: table,
+                        guests: guests,
+                        notes: notes,
+                        phone: phone,
+                        items: orderItems.length > 0 ? orderItems : activeOrders[existingOrderIndex].items
+                    };
+                    currentSelectedTable = table;
+                    saveOrdersToStorage();
+                    showToast(`Order ${editId} updated successfully!`, 'success');
+                }
+            } else {
+                // Create new order
+                if (orderType === 'dine-in') {
+                    const existing = activeOrders.find(o => o.table === table);
+                    if (existing) {
+                        existing.customer = customerName;
+                        existing.status = status;
+                        existing.guests = guests;
+                        existing.notes = notes;
+                        if (orderItems.length > 0) {
+                            orderItems.forEach(newItem => {
+                                const found = existing.items.find(i => i.name === newItem.name);
+                                if (found) found.qty += newItem.qty;
+                                else existing.items.push(newItem);
+                            });
+                        }
+                        currentSelectedTable = table;
+                        saveOrdersToStorage();
+                        showToast(`Updated active order for Table ${table} (${customerName})!`, 'info');
+                    } else {
+                        const newOrder = {
+                            id: 'ORD-' + Math.floor(1000 + Math.random() * 9000),
+                            table: table,
+                            customer: customerName,
+                            orderType: orderType,
+                            status: status,
+                            guests: guests,
+                            notes: notes,
+                            phone: phone,
+                            items: orderItems
+                        };
+                        activeOrders.push(newOrder);
+                        currentSelectedTable = table;
+                        saveOrdersToStorage();
+                        showToast(`Order created for Table ${table} (${customerName})!`, 'success');
+                    }
+                } else {
+                    const newOrder = {
+                        id: 'ORD-' + Math.floor(1000 + Math.random() * 9000),
+                        table: table,
+                        customer: customerName,
+                        orderType: orderType,
+                        status: status,
+                        guests: 1,
+                        notes: notes,
+                        phone: phone,
+                        items: orderItems
+                    };
+                    activeOrders.push(newOrder);
+                    currentSelectedTable = table;
+                    saveOrdersToStorage();
+                    showToast(`${orderType === 'take-away' ? 'Takeaway' : 'Delivery'} order created for ${customerName}!`, 'success');
+                }
+            }
+
+            closeOrderModal();
+            renderOrderCarousel();
+            renderBillingSidebar();
+            renderDishesGrid();
+            renderTablesFloorMap();
+            renderOrdersTableView();
+            renderDashboardKPIs();
+        });
+    }
+
+    window.openCreateOrderModal = function(preferredTable = null, editOrderId = null) {
+        if (!orderModal) return;
+
+        clearStatus(modalOrderCustomer, modalOrderCustomerError);
+        clearStatus(modalOrderTable, modalOrderTableError);
+        clearStatus(modalOrderGuests, modalOrderGuestsError);
+        if (modalItemsSearch) modalItemsSearch.value = '';
+
+        modalSelectedDishes = {};
+
+        if (editOrderId) {
+            const orderToEdit = activeOrders.find(o => o.id === editOrderId);
+            if (orderToEdit) {
+                modalOrderIdInput.value = orderToEdit.id;
+                modalOrderTitle.textContent = `Edit Order ${orderToEdit.id}`;
+                modalOrderSubtitle.textContent = `Update details for Table ${orderToEdit.table}`;
+                modalSubmitBtnText.textContent = 'Save Changes';
+
+                modalOrderCustomer.value = orderToEdit.customer || '';
+                modalOrderStatus.value = orderToEdit.status || 'in process';
+                modalOrderGuests.value = orderToEdit.guests || 2;
+                if (modalOrderNotes) modalOrderNotes.value = orderToEdit.notes || '';
+                if (modalOrderPhone) modalOrderPhone.value = orderToEdit.phone || '';
+                currentOrderModalType = orderToEdit.orderType || 'dine-in';
+
+                if (orderToEdit.items && Array.isArray(orderToEdit.items)) {
+                    orderToEdit.items.forEach(item => {
+                        const matched = getAllDishes().find(d => d.name === item.name || d.id === item.id);
+                        const key = matched ? matched.id : item.id;
+                        modalSelectedDishes[key] = (modalSelectedDishes[key] || 0) + item.qty;
+                    });
+                }
+
+                populateModalTableOptions(orderToEdit.table, orderToEdit.id);
+            }
+        } else {
+            modalOrderIdInput.value = '';
+            modalOrderTitle.textContent = 'Create New Order';
+            modalOrderSubtitle.textContent = 'Configure table, customer, and dishes';
+            modalSubmitBtnText.textContent = 'Create Order';
+
+            modalOrderCustomer.value = '';
+            modalOrderStatus.value = 'in process';
+            modalOrderGuests.value = 2;
+            if (modalOrderNotes) modalOrderNotes.value = '';
+            if (modalOrderPhone) modalOrderPhone.value = '';
+            currentOrderModalType = 'dine-in';
+
+            populateModalTableOptions(preferredTable);
+        }
+
+        if (modalOrderTypePicker) {
+            modalOrderTypePicker.querySelectorAll('.segment-btn').forEach(btn => {
+                const type = btn.getAttribute('data-type');
+                btn.classList.toggle('active', type === currentOrderModalType);
+            });
+        }
+        syncOrderTypeFields();
+
+        renderModalDishPicker('');
+        orderModal.classList.add('active');
+        setTimeout(() => {
+            if (modalOrderCustomer) modalOrderCustomer.focus();
+        }, 50);
+    };
+
+    window.closeOrderModal = function() {
+        if (!orderModal) return;
+        orderModal.classList.remove('active');
+        clearStatus(modalOrderCustomer, modalOrderCustomerError);
+        clearStatus(modalOrderTable, modalOrderTableError);
+        clearStatus(modalOrderGuests, modalOrderGuestsError);
+    };
+
+    window.editCurrentActiveOrder = function() {
+        const active = getActiveOrder();
+        if (active) {
+            openCreateOrderModal(null, active.id);
+        } else {
+            showToast('No active order selected to edit. Please create a new order.', 'info');
+            openCreateOrderModal(currentSelectedTable);
+        }
+    };
+
+    window.promptCreateNewOrder = function(preferredTable = null) {
+        openCreateOrderModal(preferredTable);
     };
 
     // --- 8. CATEGORY PICKER & SEARCH ---
@@ -1205,6 +1617,27 @@ document.addEventListener('DOMContentLoaded', () => {
         renderDishesGrid();
         renderTablesFloorMap();
     };
+
+    // Close Modals on Backdrop Click
+    [orderModal, dishModal, receiptModal].forEach(modalEl => {
+        if (!modalEl) return;
+        modalEl.addEventListener('click', (e) => {
+            if (e.target === modalEl) {
+                if (modalEl === orderModal) closeOrderModal();
+                else if (modalEl === dishModal) closeDishModal();
+                else if (modalEl === receiptModal) closeReceiptModal();
+            }
+        });
+    });
+
+    // Close Modals on Escape Key Press
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (orderModal && orderModal.classList.contains('active')) closeOrderModal();
+            else if (dishModal && dishModal.classList.contains('active')) closeDishModal();
+            else if (receiptModal && receiptModal.classList.contains('active')) closeReceiptModal();
+        }
+    });
 
     // Payment Method selection
     document.querySelectorAll('.payment-pill').forEach(pill => {
