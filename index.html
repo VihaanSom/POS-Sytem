@@ -1,75 +1,193 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DashPoint - Modern Point of Sale</title>
     <link rel="icon" type="image/png" href="assets/logo.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <header class="navbar">
         <div class="nav-container">
-            <div class="logo">
-                <img src="assets/logo.png" alt="DashPoint Logo" width="40" onerror="this.src='https://via.placeholder.com/40x40/2563eb/ffffff?text=DP'">
+            <a href="index.html" class="logo">
+                <img src="assets/logo.png" alt="DashPoint Logo" width="38" height="38"
+                    onerror="this.src='https://via.placeholder.com/38x38/2563eb/ffffff?text=DP'">
                 <span>DashPoint</span>
-            </div>
-            <div class="nav-links">
+            </a>
+            <nav class="nav-links">
+                <a href="#features" class="nav-item-link">Features</a>
+                <a href="#showcase" class="nav-item-link">Showcase</a>
+                <a href="contact.html" class="nav-item-link">Contact</a>
                 <a href="login.html" class="btn btn-outline">Log In</a>
                 <a href="register.html" class="btn btn-primary">Sign Up</a>
-            </div>
+            </nav>
         </div>
     </header>
 
     <main>
         <section class="hero">
             <div class="hero-content">
-                <h1 class="animate-up">Empower Your Business with DashPoint</h1>
-                <p class="animate-up delay-1">The simple, fast, and elegant point of sale system designed to scale your operations effortlessly.</p>
+                <div class="hero-badge animate-up">
+                    <span class="badge-dot"></span>
+                    <span>DashPoint • Cloud POS Suite</span>
+                </div>
+                <h1 class="animate-up">Empower Your Restaurant with DashPoint</h1>
+                <p class="animate-up delay-1">The lightning-fast, intuitive, and elegant point of sale system designed
+                    to streamline your operations from kitchen to checkout.</p>
                 <div class="hero-actions animate-up delay-2">
                     <a href="register.html" class="btn btn-primary btn-lg">Get Started Free</a>
-                    <a href="#features" class="btn btn-secondary btn-lg">Explore Features</a>
+                    <a href="#showcase" class="btn btn-secondary btn-lg">Explore Tour ↓</a>
                 </div>
             </div>
         </section>
 
+        <!-- CAROUSEL SHOWCASE SECTION -->
+        <section id="showcase" class="showcase-section">
+            <div class="section-container">
+                <div class="section-header">
+                    <h2>Explore DashPoint</h2>
+                    <p>Discover how our simple and fast point of sale system works.</p>
+                </div>
+
+                <div class="carousel-container">
+                    <!-- Slide 1 -->
+                    <div class="carousel-slide active">
+                        <div class="slide-card">
+                            <div class="slide-info">
+                                <span class="badge">POS Terminal</span>
+                                <h3>Fast Touch Ordering</h3>
+                                <p>Quickly take orders, customize items, and process transactions with zero delay.</p>
+                                <a href="dashboard.html" class="btn btn-primary">Launch Terminal</a>
+                            </div>
+                            <div class="slide-image">
+                                <img src="assets/pos-dashboard.png" alt="POS Dashboard">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Slide 2 -->
+                    <div class="carousel-slide">
+                        <div class="slide-card">
+                            <div class="slide-info">
+                                <span class="badge">Floor Management</span>
+                                <h3>Live Table Layout</h3>
+                                <p>Easily view available, occupied, and reserved tables in real-time across your
+                                    restaurant.</p>
+                                <a href="dashboard.html" class="btn btn-primary">View Tables</a>
+                            </div>
+                            <div class="slide-image">
+                                <img src="assets/pos-dashboard.png" alt="Table Layout">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Slide 3 -->
+                    <div class="carousel-slide">
+                        <div class="slide-card">
+                            <div class="slide-info">
+                                <span class="badge">Analytics</span>
+                                <h3>Clear Business Reports</h3>
+                                <p>Track gross sales, top-selling dishes, and daily performance metrics at a glance.</p>
+                                <a href="dashboard.html" class="btn btn-primary">View Reports</a>
+                            </div>
+                            <div class="slide-image">
+                                <img src="assets/pos-dashboard.png" alt="Business Reports">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Slide 4 -->
+                    <div class="carousel-slide">
+                        <div class="slide-card">
+                            <div class="slide-info">
+                                <span class="badge">Billing</span>
+                                <h3>Instant Receipts & Payments</h3>
+                                <p>Support card, cash, and split payments with automated thermal receipt printing.</p>
+                                <a href="dashboard.html" class="btn btn-primary">Try Checkout</a>
+                            </div>
+                            <div class="slide-image">
+                                <img src="assets/pos-dashboard.png" alt="Billing and Receipts">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Previous & Next Buttons -->
+                    <button class="carousel-arrow prev" id="prevBtn" type="button"
+                        aria-label="Previous Slide">&#10094;</button>
+                    <button class="carousel-arrow next" id="nextBtn" type="button"
+                        aria-label="Next Slide">&#10095;</button>
+
+                    <!-- Dot Indicators -->
+                    <div class="carousel-dots">
+                        <span class="carousel-dot active"></span>
+                        <span class="carousel-dot"></span>
+                        <span class="carousel-dot"></span>
+                        <span class="carousel-dot"></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURES SECTION -->
         <section id="features" class="features-section">
             <div class="section-container">
                 <div class="section-header">
-                    <h2>Everything You Need</h2>
-                    <p>Powerful features packed in a beautiful, easy-to-use interface.</p>
+                    <span class="sub-badge">Why Choose DashPoint</span>
+                    <h2>Everything You Need in One Unified Suite</h2>
+                    <p>Powerful tools built from the ground up to eliminate restaurant bottlenecks and maximize dining
+                        satisfaction.</p>
                 </div>
-                
+
                 <div class="features-grid">
                     <div class="feature-card">
                         <div class="feature-icon">⚡</div>
-                        <h3>Fast Payments</h3>
-                        <p>Process transactions in seconds with our optimized payment flow.</p>
+                        <h3>Lightning-Fast Checkout</h3>
+                        <p>Process customer transactions in seconds with our touch-optimized order flow and keyboard
+                            shortcuts.</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">📦</div>
-                        <h3>Simple Inventory</h3>
-                        <p>Keep track of your stock levels in real-time with automated alerts.</p>
+                        <h3>Live Menu & Pricing</h3>
+                        <p>Manage dish availability, pricing, tax groups, and custom modifiers in real-time across all
+                            devices.</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">📊</div>
-                        <h3>Basic Reports</h3>
-                        <p>Gain insights into your business performance with clear analytics.</p>
+                        <h3>Instant Accounting Reports</h3>
+                        <p>Gain direct clarity on daily shift earnings, waiter performance, and top-selling revenue
+                            dishes.</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">✨</div>
-                        <h3>Easy Interface</h3>
-                        <p>A clutter-free dashboard designed for minimal training time.</p>
+                        <h3>Zero Training Friction</h3>
+                        <p>A modern, clutter-free user interface engineered so floor staff can begin taking orders in
+                            under 5 minutes.</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="dashboard-preview">
+        <!-- CTA BANNER SECTION -->
+        <section class="cta-banner-section">
             <div class="section-container">
-                <div class="preview-wrapper">
-                    <img src="assets/pos-dashboard.png" alt="DashPoint Dashboard Interface" class="dashboard-img" onerror="this.src='https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1200&q=80'">
+                <div class="cta-card">
+                    <div class="cta-content">
+                        <h2>Ready to Accelerate Your Operations?</h2>
+                        <p>Join thousands of modern hospitality operators using DashPoint to increase table turnover and
+                            boost profits.</p>
+                        <div class="cta-buttons">
+                            <a href="register.html" class="btn btn-primary btn-lg">Start Free Trial</a>
+                            <a href="dashboard.html" class="btn btn-outline-white btn-lg">Explore Live POS Demo</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -78,10 +196,22 @@
     <footer>
         <div class="footer-content">
             <div class="footer-logo">
+                <img src="assets/logo.png" alt="DashPoint Logo" width="30" height="30" style="border-radius: 6px;">
                 <span>DashPoint</span>
+            </div>
+            <div class="footer-nav">
+                <a href="#features">Features</a>
+                <a href="#showcase">Showcase</a>
+                <a href="contact.html">Contact Us</a>
+                <a href="login.html">Log In</a>
+                <a href="register.html">Sign Up</a>
             </div>
             <p>&copy; 2026 DashPoint Inc. All rights reserved.</p>
         </div>
     </footer>
+
+    <!-- CAROUSEL JAVASCRIPT CONTROLLER -->
+    <script src="carousel.js"></script>
 </body>
+
 </html>
