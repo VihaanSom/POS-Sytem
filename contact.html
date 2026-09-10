@@ -1,377 +1,408 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Restaurant Contact Page</title>
-  <!-- Bootstrap CSS -->
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-  <!-- jQuery -->
-  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-  <!-- Bootstrap JS -->
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-  <style>
-    /* Custom styles for the page */
-    body {
-      display: none; /* Initially hide the body */
-      background-color: #f8fafc;
-      color: #1e293b;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    }
-    
-    .contact-form-card {
-      background: #ffffff;
-      padding: 2.25rem;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-      border: 1px solid #e2e8f0;
-    }
-
-    .form-control:focus {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.15);
-    }
-
-    .form-control.is-invalid {
-      border-color: #ef4444;
-      background-color: #fffaf0;
-    }
-
-    .form-control.is-valid {
-      border-color: #10b981;
-    }
-
-    .invalid-feedback {
-      display: none;
-      font-size: 0.825rem;
-      font-weight: 500;
-      color: #ef4444;
-      margin-top: 0.35rem;
-    }
-
-    .shake-animation {
-      animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-    }
-
-    @keyframes shake {
-      10%, 90% { transform: translate3d(-2px, 0, 0); }
-      20%, 80% { transform: translate3d(4px, 0, 0); }
-      30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-      40%, 60% { transform: translate3d(4px, 0, 0); }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DashPoint - Contact Us</title>
+    <meta name="description" content="Get in touch with DashPoint POS team in Ahmedabad, Gujarat. Reach out for sales, custom demos, support, and partnership inquiries.">
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand font-weight-bold d-flex align-items-center" href="index.html" style="gap: 10px;">
-                <img src="assets/logo.png" alt="DashPoint Logo" width="34" height="34" style="border-radius: 8px;" onerror="this.src='https://via.placeholder.com/34x34/2563eb/ffffff?text=DP'">
+    <!-- HEADER NAVBAR (Matches index.html) -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <img src="assets/logo.png" alt="DashPoint Logo" width="38" height="38"
+                    onerror="this.src='https://via.placeholder.com/38x38/2563eb/ffffff?text=DP'">
                 <span>DashPoint</span>
             </a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ml-auto align-items-center">
-                    <li class="nav-item">
-                        <a class="nav-link" href="index.html">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="index.html#features">Features</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="index.html#showcase">Showcase</a>
-                    </li>
-                    <li class="nav-item active">
-                        <a class="nav-link" href="contact.html">Contact</a>
-                    </li>
-                    <li class="nav-item ml-lg-2">
-                        <a class="btn btn-outline-light btn-sm px-3" href="login.html">Log In</a>
-                    </li>
-                    <li class="nav-item ml-lg-2">
-                        <a class="btn btn-primary btn-sm px-3" href="register.html">Sign Up</a>
-                    </li>
-                </ul>
+            <nav class="nav-links">
+                <a href="index.html#features" class="nav-item-link">Features</a>
+                <a href="index.html#showcase" class="nav-item-link">Showcase</a>
+                <a href="contact.html" class="nav-item-link active">Contact</a>
+                <a href="login.html" class="btn btn-outline">Log In</a>
+                <a href="register.html" class="btn btn-primary">Sign Up</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- HERO SECTION -->
+        <section class="hero contact-hero">
+            <div class="hero-content">
+                <div class="hero-badge animate-up">
+                    <span class="badge-dot"></span>
+                    <span>Get In Touch • DashPoint POS</span>
+                </div>
+                <h1 class="animate-up">Contact Our Team</h1>
+                <p class="animate-up delay-1">Have questions or want a personalized POS demonstration? We're here to help streamline your operations.</p>
+            </div>
+        </section>
+
+        <!-- MAIN CONTACT SECTION -->
+        <section class="contact-section">
+            <div class="section-container" style="padding-top: 0;">
+                <div class="contact-grid">
+                    
+                    <!-- LEFT COLUMN: Contact Form -->
+                    <div class="contact-card">
+                        <div class="contact-card-header">
+                            <h2>Send Us a Message</h2>
+                            <p>Fill out the form below and our team will get back to you within 24 hours.</p>
+                        </div>
+                        <form id="contact-form" novalidate>
+                            <div class="form-group">
+                                <label for="contact-name" class="form-label">Full Name <span class="required">*</span></label>
+                                <input 
+                                    type="text" 
+                                    class="form-input" 
+                                    id="contact-name" 
+                                    placeholder="Enter your name" 
+                                    required 
+                                    minlength="2" 
+                                    maxlength="50">
+                                <div class="form-feedback" id="contact-name-error"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="contact-email" class="form-label">Email Address <span class="required">*</span></label>
+                                <input 
+                                    type="email" 
+                                    class="form-input" 
+                                    id="contact-email" 
+                                    placeholder="name@company.com" 
+                                    required>
+                                <div class="form-feedback" id="contact-email-error"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="contact-message" class="form-label">Message <span class="required">*</span></label>
+                                <textarea 
+                                    class="form-textarea" 
+                                    id="contact-message" 
+                                    rows="5" 
+                                    placeholder="Write your inquiry or feedback (minimum 10 characters)..." 
+                                    required 
+                                    minlength="10" 
+                                    maxlength="1000"></textarea>
+                                <div class="form-feedback" id="contact-message-error"></div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-block btn-lg" id="contact-submit-btn">Send Message</button>
+
+                            <div id="contact-success-alert" class="form-alert form-alert-success" role="alert">
+                                <strong>Thank you!</strong> Your message has been received. Our team will get back to you shortly.
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- RIGHT COLUMN: Contact Details & Info -->
+                    <div class="contact-sidebar">
+                        
+                        <!-- Opening & Support Hours Card -->
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <span class="info-icon">🕒</span>
+                                <h3>Opening Hours</h3>
+                            </div>
+                            <ul class="hours-list">
+                                <li class="hours-item">
+                                    <span class="hours-day">Monday - Thursday</span>
+                                    <span class="hours-time">9:00 AM - 10:00 PM</span>
+                                </li>
+                                <li class="hours-item">
+                                    <span class="hours-day">Friday - Saturday</span>
+                                    <span class="hours-time">9:00 AM - 11:00 PM</span>
+                                </li>
+                                <li class="hours-item">
+                                    <span class="hours-day">Sunday</span>
+                                    <span class="hours-time">10:00 AM - 9:00 PM</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Direct Office Location & Social Links -->
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <span class="info-icon">📍</span>
+                                <h3>Office Location</h3>
+                            </div>
+                            <p style="margin-bottom: 0.85rem; font-size: 0.95rem; line-height: 1.6;">
+                                <strong style="color: var(--text-main);">DashPoint Suite</strong><br>
+                                SG Highway, Bodakdev,<br>
+                                Ahmedabad, Gujarat 380054
+                            </p>
+                            <p style="font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.25rem;">
+                                ✉️ <a href="mailto:support@dashpointpos.com" style="color: var(--primary-color); text-decoration: none;">support@dashpointpos.com</a><br>
+                                📞 <a href="tel:+917940001234" style="color: var(--text-main); text-decoration: none; font-weight: 500;">+91 79 4000 1234</a>
+                            </p>
+                            <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--text-main);">Follow Us</h4>
+                            <div class="social-links">
+                                <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" class="social-btn social-fb">Facebook</a>
+                                <a href="https://twitter.com/home" target="_blank" rel="noopener noreferrer" class="social-btn social-tw">Twitter / X</a>
+                                <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" class="social-btn social-ig">Instagram</a>
+                            </div>
+                        </div>
+
+                        <!-- Newsletter & Special Offer Card -->
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <span class="info-icon">🎁</span>
+                                <h3>Special Offer</h3>
+                            </div>
+                            <p style="font-size: 0.92rem; margin-bottom: 0.85rem;">
+                                Get <strong>10% off</strong> your next order or subscription by signing up for our newsletter!
+                            </p>
+                            <form id="newsletter-form" class="newsletter-form" novalidate>
+                                <div class="input-action-group">
+                                    <input 
+                                        type="email" 
+                                        class="form-input" 
+                                        id="newsletter-email" 
+                                        placeholder="Enter your email" 
+                                        required>
+                                    <button type="submit" class="btn btn-primary" id="newsletter-btn">Subscribe</button>
+                                </div>
+                                <div class="form-feedback" id="newsletter-email-error"></div>
+                                <div id="newsletter-success-alert" class="form-alert form-alert-success" role="alert">
+                                    🎉 <strong>Awesome!</strong> You have successfully subscribed to our newsletter!
+                                </div>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER WITH SIMPLE EMBEDDED MAP OF AHMEDABAD, GUJARAT -->
+    <footer>
+        <!-- Simple Map of Ahmedabad, Gujarat -->
+        <div class="footer-map-section">
+            <div class="footer-map-header">
+                <div class="footer-map-title">
+                    <h3>Our Location</h3>
+                    <span class="footer-map-badge">📍 Ahmedabad, Gujarat</span>
+                </div>
+                <span class="footer-map-subtitle">SG Highway, Bodakdev, Ahmedabad, Gujarat 380054</span>
+            </div>
+            <div class="footer-map-frame">
+                <iframe 
+                    title="DashPoint Office Location - Ahmedabad, Gujarat"
+                    src="https://www.openstreetmap.org/export/embed.html?bbox=72.46%2C22.95%2C72.66%2C23.09&amp;layer=mapnik&amp;marker=23.0225%2C72.5714" 
+                    loading="lazy">
+                </iframe>
+            </div>
+            <div class="footer-map-links">
+                <a href="https://www.google.com/maps?q=Ahmedabad,+Gujarat" target="_blank" rel="noopener noreferrer" class="map-external-link">Open in Google Maps ↗</a>
+                <a href="https://www.openstreetmap.org/?mlat=23.0225&amp;mlon=72.5714#map=12/23.0225/72.5714" target="_blank" rel="noopener noreferrer" class="map-external-link">View Full Map ↗</a>
             </div>
         </div>
-    </nav>
 
-  <div class="container pb-5">
-    <h1 class="text-center mt-5 font-weight-bold">Contact Us</h1>
-    <p class="text-center text-muted mb-4">Have questions or want to host a special event? Send us a message!</p>
-    
-    <div class="row">
-      <div class="col-lg-6 mx-auto">
-        <div class="contact-form-card">
-          <form id="contact-form" novalidate>
-            <div class="form-group">
-              <label for="contact-name" class="font-weight-bold">Name <span class="text-danger">*</span></label>
-              <input 
-                type="text" 
-                class="form-control" 
-                id="contact-name" 
-                placeholder="Enter your name"
-                required
-                minlength="2"
-                maxlength="50"
-                pattern="^[a-zA-Z\s'-]+$"
-                aria-describedby="contact-name-error">
-              <div class="invalid-feedback" id="contact-name-error"></div>
+        <!-- Footer Bottom Content (Matches index.html) -->
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="assets/logo.png" alt="DashPoint Logo" width="30" height="30" style="border-radius: 6px;"
+                    onerror="this.src='https://via.placeholder.com/30x30/2563eb/ffffff?text=DP'">
+                <span>DashPoint</span>
             </div>
-            
-            <div class="form-group">
-              <label for="contact-email" class="font-weight-bold">Email address <span class="text-danger">*</span></label>
-              <input 
-                type="email" 
-                class="form-control" 
-                id="contact-email" 
-                placeholder="Enter your email"
-                required
-                aria-describedby="contact-email-error">
-              <div class="invalid-feedback" id="contact-email-error"></div>
+            <div class="footer-nav">
+                <a href="index.html#features">Features</a>
+                <a href="index.html#showcase">Showcase</a>
+                <a href="contact.html">Contact Us</a>
+                <a href="login.html">Log In</a>
+                <a href="register.html">Sign Up</a>
             </div>
-            
-            <div class="form-group">
-              <label for="contact-message" class="font-weight-bold">Message <span class="text-danger">*</span></label>
-              <textarea 
-                class="form-control" 
-                id="contact-message" 
-                rows="4" 
-                placeholder="Write your inquiry or feedback (minimum 10 characters)..."
-                required
-                minlength="10"
-                maxlength="1000"
-                aria-describedby="contact-message-error"></textarea>
-              <div class="invalid-feedback" id="contact-message-error"></div>
-            </div>
-            
-            <button type="submit" class="btn btn-primary btn-block font-weight-bold py-2" id="contact-submit-btn">Send Message</button>
-            
-            <div id="contact-success-alert" class="alert alert-success mt-3" style="display: none;" role="alert">
-              <strong>Thank you!</strong> Your message has been received. Our team will get back to you shortly.
-            </div>
-          </form>
+            <p>&copy; 2026 DashPoint Inc. All rights reserved.</p>
         </div>
-      </div>
-    </div>
+    </footer>
 
-    <div class="row mt-5">
-      <div class="col-lg-6 mx-auto">
-        <h2 class="text-center font-weight-bold">Opening Hours</h2>
-        <ul class="list-group shadow-sm mt-3">
-          <li class="list-group-item d-flex justify-content-between"><span>Monday - Thursday:</span> <strong>9:00 AM - 10:00 PM</strong></li>
-          <li class="list-group-item d-flex justify-content-between"><span>Friday - Saturday:</span> <strong>9:00 AM - 11:00 PM</strong></li>
-          <li class="list-group-item d-flex justify-content-between"><span>Sunday:</span> <strong>10:00 AM - 9:00 PM</strong></li>
-        </ul>
-      </div>
-    </div>
+    <!-- LIGHTWEIGHT, SIMPLE VANILLA JS LOGIC -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            const NAME_REGEX = /^[a-zA-Z\s'-]{2,50}$/;
 
-    <div class="row mt-5">
-      <div class="col-lg-6 mx-auto text-center">
-        <h2 class="font-weight-bold">Follow Us</h2>
-        <p class="text-muted">Stay updated with our latest news and special chef offerings!</p>
-        <div class="mt-3">
-          <a href="https://www.facebook.com/" target="_blank" rel="noopener" class="btn btn-primary mr-2 px-3">Facebook</a>
-          <a href="https://twitter.com/home" target="_blank" rel="noopener" class="btn btn-info mr-2 px-3 text-white">Twitter</a>
-          <a href="https://www.instagram.com/" target="_blank" rel="noopener" class="btn btn-danger px-3">Instagram</a>
-        </div>
-      </div>
-    </div>
+            function setFieldInvalid(field, errorEl, message) {
+                field.classList.add('is-invalid');
+                field.classList.remove('is-valid');
+                errorEl.textContent = message;
+                errorEl.style.display = 'block';
+            }
 
-    <div class="row mt-5">
-      <div class="col-lg-6 mx-auto">
-        <div class="card p-4 shadow-sm border-0 bg-white" style="border-radius: 16px;">
-          <h2 class="text-center font-weight-bold">Special Offer</h2>
-          <p class="text-center text-muted mb-3">
-            Get <strong>10% off</strong> your next order by subscribing to our newsletter!
-          </p>
-          <form id="newsletter-form" novalidate>
-            <div class="input-group mb-2">
-              <input 
-                type="email" 
-                class="form-control" 
-                id="newsletter-email" 
-                placeholder="Enter your email" 
-                required 
-                aria-describedby="newsletter-email-error">
-              <div class="input-group-append">
-                <button class="btn btn-primary font-weight-bold" type="submit">Subscribe</button>
-              </div>
-            </div>
-            <div class="invalid-feedback" id="newsletter-email-error"></div>
-            <div id="newsletter-success-alert" class="alert alert-success mt-2" style="display: none;" role="alert">
-              🎉 <strong>Awesome!</strong> You have successfully subscribed to our newsletter!
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+            function setFieldValid(field, errorEl) {
+                field.classList.remove('is-invalid');
+                field.classList.add('is-valid');
+                errorEl.textContent = '';
+                errorEl.style.display = 'none';
+            }
 
-  </div>
+            function clearField(field, errorEl) {
+                field.classList.remove('is-invalid', 'is-valid');
+                errorEl.textContent = '';
+                errorEl.style.display = 'none';
+            }
 
-  <!-- jQuery & Form Validation JS -->
-  <script>
-    $(document).ready(function () {
-      // Fade in body
-      $('body').fadeIn(600);
+            // --- Contact Form Logic ---
+            const contactForm = document.getElementById('contact-form');
+            const cName = document.getElementById('contact-name');
+            const cEmail = document.getElementById('contact-email');
+            const cMsg = document.getElementById('contact-message');
+            const cNameErr = document.getElementById('contact-name-error');
+            const cEmailErr = document.getElementById('contact-email-error');
+            const cMsgErr = document.getElementById('contact-message-error');
+            const cSuccess = document.getElementById('contact-success-alert');
+            const cBtn = document.getElementById('contact-submit-btn');
 
-      const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-      const NAME_REGEX = /^[a-zA-Z\s'-]{2,50}$/;
+            function validateName(showEmpty = true) {
+                const val = cName.value.trim();
+                if (val === '') {
+                    if (showEmpty) setFieldInvalid(cName, cNameErr, 'Please enter your name.');
+                    else clearField(cName, cNameErr);
+                    return false;
+                }
+                if (val.length < 2) {
+                    setFieldInvalid(cName, cNameErr, 'Name must be at least 2 characters.');
+                    return false;
+                }
+                if (!NAME_REGEX.test(val)) {
+                    setFieldInvalid(cName, cNameErr, 'Name can only contain letters, spaces, and hyphens.');
+                    return false;
+                }
+                setFieldValid(cName, cNameErr);
+                return true;
+            }
 
-      function setFieldInvalid($field, $error, message) {
-        $field.addClass('is-invalid').removeClass('is-valid');
-        $error.text(message).show();
-      }
+            function validateEmail(showEmpty = true) {
+                const val = cEmail.value.trim();
+                if (val === '') {
+                    if (showEmpty) setFieldInvalid(cEmail, cEmailErr, 'Please enter your email address.');
+                    else clearField(cEmail, cEmailErr);
+                    return false;
+                }
+                if (!EMAIL_REGEX.test(val)) {
+                    setFieldInvalid(cEmail, cEmailErr, 'Please enter a valid email address (e.g. name@domain.com).');
+                    return false;
+                }
+                setFieldValid(cEmail, cEmailErr);
+                return true;
+            }
 
-      function setFieldValid($field, $error) {
-        $field.removeClass('is-invalid').addClass('is-valid');
-        $error.text('').hide();
-      }
+            function validateMessage(showEmpty = true) {
+                const val = cMsg.value.trim();
+                if (val === '') {
+                    if (showEmpty) setFieldInvalid(cMsg, cMsgErr, 'Please enter a message.');
+                    else clearField(cMsg, cMsgErr);
+                    return false;
+                }
+                if (val.length < 10) {
+                    setFieldInvalid(cMsg, cMsgErr, 'Message must be at least 10 characters long.');
+                    return false;
+                }
+                setFieldValid(cMsg, cMsgErr);
+                return true;
+            }
 
-      function clearField($field, $error) {
-        $field.removeClass('is-invalid is-valid');
-        $error.text('').hide();
-      }
+            cName.addEventListener('input', () => validateName(false));
+            cName.addEventListener('blur', () => validateName(false));
+            cEmail.addEventListener('input', () => validateEmail(false));
+            cEmail.addEventListener('blur', () => validateEmail(false));
+            cMsg.addEventListener('input', () => validateMessage(false));
+            cMsg.addEventListener('blur', () => validateMessage(false));
 
-      // --- Contact Form Logic ---
-      const $contactForm = $('#contact-form');
-      const $cName = $('#contact-name');
-      const $cEmail = $('#contact-email');
-      const $cMsg = $('#contact-message');
+            contactForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                cSuccess.style.display = 'none';
 
-      const $cNameErr = $('#contact-name-error');
-      const $cEmailErr = $('#contact-email-error');
-      const $cMsgErr = $('#contact-message-error');
-      const $cSuccess = $('#contact-success-alert');
+                const isNameValid = validateName(true);
+                const isEmailValid = validateEmail(true);
+                const isMsgValid = validateMessage(true);
 
-      function validateName(showEmpty = true) {
-        const val = $cName.val().trim();
-        if (val === '') {
-          if (showEmpty) setFieldInvalid($cName, $cNameErr, 'Please enter your name.');
-          else clearField($cName, $cNameErr);
-          return false;
-        }
-        if (val.length < 2) {
-          setFieldInvalid($cName, $cNameErr, 'Name must be at least 2 characters.');
-          return false;
-        }
-        if (!NAME_REGEX.test(val)) {
-          setFieldInvalid($cName, $cNameErr, 'Name can only contain letters, spaces, and hyphens.');
-          return false;
-        }
-        setFieldValid($cName, $cNameErr);
-        return true;
-      }
+                if (!isNameValid || !isEmailValid || !isMsgValid) {
+                    contactForm.classList.add('shake-animation');
+                    setTimeout(() => contactForm.classList.remove('shake-animation'), 400);
 
-      function validateEmail(showEmpty = true) {
-        const val = $cEmail.val().trim();
-        if (val === '') {
-          if (showEmpty) setFieldInvalid($cEmail, $cEmailErr, 'Please enter your email address.');
-          else clearField($cEmail, $cEmailErr);
-          return false;
-        }
-        if (!EMAIL_REGEX.test(val)) {
-          setFieldInvalid($cEmail, $cEmailErr, 'Please enter a valid email address (e.g. name@domain.com).');
-          return false;
-        }
-        setFieldValid($cEmail, $cEmailErr);
-        return true;
-      }
+                    if (!isNameValid) cName.focus();
+                    else if (!isEmailValid) cEmail.focus();
+                    else cMsg.focus();
+                    return;
+                }
 
-      function validateMessage(showEmpty = true) {
-        const val = $cMsg.val().trim();
-        if (val === '') {
-          if (showEmpty) setFieldInvalid($cMsg, $cMsgErr, 'Please enter a message.');
-          else clearField($cMsg, $cMsgErr);
-          return false;
-        }
-        if (val.length < 10) {
-          setFieldInvalid($cMsg, $cMsgErr, 'Message must be at least 10 characters long.');
-          return false;
-        }
-        setFieldValid($cMsg, $cMsgErr);
-        return true;
-      }
+                // Simulate sending message
+                const originalText = cBtn.textContent;
+                cBtn.disabled = true;
+                cBtn.textContent = 'Sending...';
 
-      $cName.on('input blur', () => validateName(false));
-      $cEmail.on('input blur', () => validateEmail(false));
-      $cMsg.on('input blur', () => validateMessage(false));
+                setTimeout(() => {
+                    cBtn.disabled = false;
+                    cBtn.textContent = originalText;
+                    cSuccess.style.display = 'block';
+                    contactForm.reset();
+                    clearField(cName, cNameErr);
+                    clearField(cEmail, cEmailErr);
+                    clearField(cMsg, cMsgErr);
+                }, 600);
+            });
 
-      $contactForm.on('submit', function (e) {
-        e.preventDefault();
-        $cSuccess.hide();
+            // --- Newsletter Form Logic ---
+            const newsForm = document.getElementById('newsletter-form');
+            const newsEmail = document.getElementById('newsletter-email');
+            const newsErr = document.getElementById('newsletter-email-error');
+            const newsSuccess = document.getElementById('newsletter-success-alert');
+            const newsBtn = document.getElementById('newsletter-btn');
 
-        const isNameValid = validateName(true);
-        const isEmailValid = validateEmail(true);
-        const isMsgValid = validateMessage(true);
+            function validateNewsletter(showEmpty = true) {
+                const val = newsEmail.value.trim();
+                if (val === '') {
+                    if (showEmpty) setFieldInvalid(newsEmail, newsErr, 'Please enter an email address.');
+                    else clearField(newsEmail, newsErr);
+                    return false;
+                }
+                if (!EMAIL_REGEX.test(val)) {
+                    setFieldInvalid(newsEmail, newsErr, 'Please enter a valid email address.');
+                    return false;
+                }
+                setFieldValid(newsEmail, newsErr);
+                return true;
+            }
 
-        if (!isNameValid || !isEmailValid || !isMsgValid) {
-          $contactForm.addClass('shake-animation');
-          setTimeout(() => $contactForm.removeClass('shake-animation'), 400);
+            newsEmail.addEventListener('input', () => validateNewsletter(false));
+            newsEmail.addEventListener('blur', () => validateNewsletter(false));
 
-          if (!isNameValid) $cName.focus();
-          else if (!isEmailValid) $cEmail.focus();
-          else $cMsg.focus();
-          return;
-        }
+            newsForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                newsSuccess.style.display = 'none';
 
-        // Simulate successful submission
-        const $btn = $('#contact-submit-btn');
-        $btn.prop('disabled', true).text('Sending...');
+                if (!validateNewsletter(true)) {
+                    newsForm.classList.add('shake-animation');
+                    setTimeout(() => newsForm.classList.remove('shake-animation'), 400);
+                    newsEmail.focus();
+                    return;
+                }
 
-        setTimeout(() => {
-          $btn.prop('disabled', false).text('Send Message');
-          $cSuccess.fadeIn();
-          $contactForm[0].reset();
-          clearField($cName, $cNameErr);
-          clearField($cEmail, $cEmailErr);
-          clearField($cMsg, $cMsgErr);
-        }, 600);
-      });
+                const originalBtnText = newsBtn.textContent;
+                newsBtn.disabled = true;
+                newsBtn.textContent = '...';
 
-      // --- Newsletter Form Logic ---
-      const $newsForm = $('#newsletter-form');
-      const $newsEmail = $('#newsletter-email');
-      const $newsErr = $('#newsletter-email-error');
-      const $newsSuccess = $('#newsletter-success-alert');
-
-      function validateNewsletter(showEmpty = true) {
-        const val = $newsEmail.val().trim();
-        if (val === '') {
-          if (showEmpty) setFieldInvalid($newsEmail, $newsErr, 'Please enter an email address to subscribe.');
-          else clearField($newsEmail, $newsErr);
-          return false;
-        }
-        if (!EMAIL_REGEX.test(val)) {
-          setFieldInvalid($newsEmail, $newsErr, 'Please enter a valid email address.');
-          return false;
-        }
-        setFieldValid($newsEmail, $newsErr);
-        return true;
-      }
-
-      $newsEmail.on('input blur', () => validateNewsletter(false));
-
-      $newsForm.on('submit', function (e) {
-        e.preventDefault();
-        $newsSuccess.hide();
-
-        if (!validateNewsletter(true)) {
-          $newsForm.addClass('shake-animation');
-          setTimeout(() => $newsForm.removeClass('shake-animation'), 400);
-          $newsEmail.focus();
-          return;
-        }
-
-        $newsSuccess.fadeIn();
-        $newsForm[0].reset();
-        clearField($newsEmail, $newsErr);
-      });
-    });
-  </script>
+                setTimeout(() => {
+                    newsBtn.disabled = false;
+                    newsBtn.textContent = originalBtnText;
+                    newsSuccess.style.display = 'block';
+                    newsForm.reset();
+                    clearField(newsEmail, newsErr);
+                }, 500);
+            });
+        });
+    </script>
 </body>
 
 </html>
