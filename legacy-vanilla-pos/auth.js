@@ -1,7 +1,3 @@
-/**
- * DashPoint Authentication Forms Validation (Login & Registration)
- * Provides HTML5 + JavaScript client-side validation with real-time feedback
- */
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- Helper Validation Functions ---
