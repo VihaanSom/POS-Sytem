@@ -51,8 +51,12 @@ export function PosProvider({ children }) {
 
   // 6. LOGGED-IN USER INFO
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('dashpoint_current_user');
-    return saved ? JSON.parse(saved) : { name: 'Easton Cox', email: 'easton@dashpoint.com', role: 'Store Manager' };
+    try {
+      const saved = localStorage.getItem('dashpoint_current_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
   });
 
   // 7. FILTER & SEARCH STATE
@@ -86,8 +90,19 @@ export function PosProvider({ children }) {
   }, [settings]);
 
   useEffect(() => {
-    localStorage.setItem('dashpoint_current_user', JSON.stringify(user));
+    if (user) {
+      localStorage.setItem('dashpoint_current_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('dashpoint_current_user');
+    }
   }, [user]);
+
+  // Logout helper
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('dashpoint_current_user');
+    showToast('You have been logged out.', 'info');
+  };
 
   // Toast Helper
   const showToast = (message, type = 'info') => {
@@ -352,6 +367,7 @@ export function PosProvider({ children }) {
     addCustomDish,
     addReservation,
     deleteReservation,
+    logout,
     showToast,
     removeToast,
 

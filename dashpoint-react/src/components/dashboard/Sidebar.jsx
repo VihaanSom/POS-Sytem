@@ -24,7 +24,12 @@ import { usePos } from '../../context/PosContext';
  * ============================================================================
  */
 export default function Sidebar({ currentTab, setCurrentTab, onExit }) {
-  const { orders } = usePos();
+  const { orders, logout } = usePos();
+
+  const handleExit = () => {
+    logout();
+    if (onExit) onExit();
+  };
 
   const menuItems = [
     { id: 'menu', label: 'Menu', icon: UtensilsCrossed },
@@ -38,7 +43,7 @@ export default function Sidebar({ currentTab, setCurrentTab, onExit }) {
   return (
     <aside className="sidebar">
       <div className="brand-container">
-        <button onClick={onExit} className="brand-logo" title="DashPoint Home">
+        <button onClick={handleExit} className="brand-logo" title="DashPoint Home">
           <img
             src="/assets/logo.png"
             alt="DashPoint"
@@ -73,9 +78,9 @@ export default function Sidebar({ currentTab, setCurrentTab, onExit }) {
       </nav>
 
       <div className="sidebar-footer">
-        <button onClick={onExit} className="logout-link" title="Return to Website">
+        <button onClick={handleExit} className="logout-link" title="Log Out & Return to Website">
           <LogOut size={18} />
-          <span>Exit</span>
+          <span>Log Out</span>
         </button>
       </div>
     </aside>

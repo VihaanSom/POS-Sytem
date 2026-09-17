@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, ChevronLeft, ChevronRight, Zap, LayoutGrid, Receipt, BarChart3, Clock, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Zap, LayoutGrid, Receipt, MapPin, ShieldCheck, HeartHandshake } from 'lucide-react';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
 
@@ -13,21 +13,21 @@ export default function LandingPage({ onNavigate }) {
       title: 'Fast Touch Ordering',
       desc: 'Quickly take orders, customize items, adjust modifiers, and process table tickets with zero latency.',
       img: '/assets/pos-dashboard.png',
-      ctaText: 'Launch Terminal'
+      ctaText: 'Sign In to Terminal'
     },
     {
       badge: 'Floor Management',
       title: 'Live Table Layout & Booking',
       desc: 'Easily view available, occupied, and reserved dining tables in real-time across your restaurant floor.',
       img: '/assets/pos-dashboard.png',
-      ctaText: 'View Floor Plan'
+      ctaText: 'Sign In to Floor Plan'
     },
     {
       badge: 'Analytics',
       title: 'Clear Business Reports & Insights',
       desc: 'Track daily gross revenue, top-selling dishes, and staff ticket sizes at a single glance.',
       img: '/assets/pos-dashboard.png',
-      ctaText: 'View Reports'
+      ctaText: 'Sign In to Reports'
     }
   ];
 
@@ -59,11 +59,8 @@ export default function LandingPage({ onNavigate }) {
             streamline your operations from kitchen to checkout.
           </p>
           <div className="hero-actions">
-            <button onClick={() => onNavigate('dashboard')} className="btn btn-primary btn-lg">
-              Launch POS App <ArrowRight size={18} />
-            </button>
-            <button onClick={() => onNavigate('login')} className="btn btn-outline btn-lg">
-              Manager Log In
+            <button onClick={() => onNavigate('about')} className="btn btn-primary btn-lg">
+              About DashPoint <ArrowRight size={18} />
             </button>
           </div>
         </div>
@@ -82,9 +79,6 @@ export default function LandingPage({ onNavigate }) {
               <span className="badge badge-primary">{slides[activeSlide].badge}</span>
               <h3>{slides[activeSlide].title}</h3>
               <p>{slides[activeSlide].desc}</p>
-              <button onClick={() => onNavigate('dashboard')} className="btn btn-primary">
-                {slides[activeSlide].ctaText} &rarr;
-              </button>
             </div>
 
             <div className="slide-img-wrap">
@@ -166,7 +160,35 @@ export default function LandingPage({ onNavigate }) {
         </div>
       </section>
 
-      <Footer />
+      {/* About Section on Landing Page */}
+      <section id="about" className="landing-about-section">
+        <div className="section-title-wrap">
+          <h2>About DashPoint &amp; Our Team</h2>
+          <p>Headquartered in Ahmedabad, building modern tools for modern hospitality</p>
+        </div>
+
+        <div className="landing-about-container">
+          <div className="about-preview-card">
+            <div className="about-preview-badge">
+              <MapPin size={18} color="var(--primary)" />
+              <span>Ahmedabad, Gujarat &bull; Operations Hub</span>
+            </div>
+            <h3>Crafted with Pride in Ahmedabad</h3>
+            <p>
+              DashPoint was created to replace clunky legacy cash registers with a modern, cloud-first
+              solution. From our tech center in Ahmedabad, India, our team develops ultra-reliable,
+              touch-friendly software trusted by restaurants and cafes.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'center' }}>
+              <button onClick={() => onNavigate('about')} className="btn btn-primary">
+                Read Full Story &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <Footer onNavigate={onNavigate} />
     </div>
   );
 }

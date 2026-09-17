@@ -131,7 +131,7 @@ export default function RegisterPage({ onNavigate }) {
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.85rem' }}>
-            Register &amp; Launch POS <ArrowRight size={16} />
+            Create Account &amp; Enter POS <ArrowRight size={16} />
           </button>
         </form>
 

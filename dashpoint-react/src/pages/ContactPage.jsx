@@ -129,7 +129,7 @@ export default function ContactPage({ onNavigate }) {
         </div>
       </div>
 
-      <Footer />
+      <Footer onNavigate={onNavigate} />
     </div>
   );
 }
