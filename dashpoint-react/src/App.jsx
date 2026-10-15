@@ -11,17 +11,10 @@ import './styles/index.css';
 import './styles/dashboard.css';
 import './styles/landing.css';
 
-/**
- * MainApp handles page switching and route authentication protection.
- * Simple React state driven routing:
- * - Default page is 'landing'.
- * - POS dashboard is strictly protected: access requires user login.
- */
 function MainApp() {
   const [currentPage, setCurrentPage] = useState('landing');
   const { user, showToast } = usePos();
 
-  // Route protection: If user attempts to enter 'dashboard' without logging in, redirect to 'login'
   useEffect(() => {
     if (currentPage === 'dashboard' && !user) {
       showToast('Please log in with your staff account to access the POS Dashboard.', 'error');
