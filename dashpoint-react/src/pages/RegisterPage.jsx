@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { usePos } from '../context/PosContext';
+import api from '../services/api';
 
 export default function RegisterPage({ onNavigate }) {
   const { setUser, showToast } = usePos();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     restaurant: '',
@@ -39,19 +41,31 @@ export default function RegisterPage({ onNavigate }) {
     return Object.keys(errs).length === 0;
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
-    setUser({
-      name: formData.name.trim(),
-      email: formData.email.trim(),
-      restaurant: formData.restaurant.trim(),
-      role: 'Owner / Manager'
-    });
+    setLoading(true);
+    try {
+      const res = await api.auth.register({
+        name: formData.name.trim(),
+        restaurant: formData.restaurant.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+      });
 
-    showToast(`Account registered for ${formData.restaurant}! Welcome!`, 'success');
-    onNavigate('dashboard');
+      if (res.token) {
+        localStorage.setItem('dashpoint_token', res.token);
+      }
+
+      setUser(res.user);
+      showToast(`Account registered for ${formData.restaurant}! Welcome!`, 'success');
+      onNavigate('dashboard');
+    } catch (err) {
+      showToast(err.message || 'Registration failed', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -130,8 +144,8 @@ export default function RegisterPage({ onNavigate }) {
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.85rem' }}>
-            Create Account &amp; Enter POS <ArrowRight size={16} />
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.85rem' }} disabled={loading}>
+            {loading ? 'Creating Account...' : <>Create Account &amp; Enter POS <ArrowRight size={16} /></>}
           </button>
         </form>
 

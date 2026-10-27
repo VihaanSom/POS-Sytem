@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -19,36 +20,48 @@ async function main() {
   });
 
   // 2. Default Staff User
+  const hashedPassword = await bcrypt.hash('admin123', 10);
   await prisma.user.upsert({
     where: { username: 'admin' },
-    update: {},
+    update: {
+      passwordHash: hashedPassword,
+    },
     create: {
       username: 'admin',
       email: 'admin@dashpoint.pos',
       fullName: 'System Administrator',
-      passwordHash: 'admin123', // In production use bcrypt
+      passwordHash: hashedPassword,
       role: 'ADMIN',
     },
   });
 
-  // 3. Tables
-  const tables = [
-    { tableNumber: 'T1', seatingCapacity: 4, status: 'AVAILABLE' },
-    { tableNumber: 'T2', seatingCapacity: 2, status: 'AVAILABLE' },
-    { tableNumber: 'T3', seatingCapacity: 4, status: 'AVAILABLE' },
-    { tableNumber: 'T4', seatingCapacity: 6, status: 'AVAILABLE' },
-    { tableNumber: 'T5', seatingCapacity: 2, status: 'AVAILABLE' },
-    { tableNumber: 'T6', seatingCapacity: 4, status: 'OCCUPIED' },
-    { tableNumber: 'T7', seatingCapacity: 4, status: 'OCCUPIED' },
-    { tableNumber: 'T8', seatingCapacity: 6, status: 'OCCUPIED' },
-  ];
+  // 3. Tables (T1 through T20)
+  const tableData = [];
+  for (let i = 1; i <= 20; i++) {
+    const tableNumber = `T${i}`;
+    let capacity = 4;
+    if (i % 4 === 0) capacity = 6;
+    if (i % 4 === 2) capacity = 2;
+    // T6, T7, T8 will be occupied by initial orders
+    const isOccupied = ['T6', 'T7', 'T8'].includes(tableNumber);
+    tableData.push({
+      tableNumber,
+      seatingCapacity: capacity,
+      status: isOccupied ? 'OCCUPIED' : 'AVAILABLE',
+    });
+  }
 
-  for (const t of tables) {
-    await prisma.restaurantTable.upsert({
+  const tableMap = {};
+  for (const t of tableData) {
+    const tableRecord = await prisma.restaurantTable.upsert({
       where: { tableNumber: t.tableNumber },
-      update: {},
+      update: {
+        seatingCapacity: t.seatingCapacity,
+        status: t.status,
+      },
       create: t,
     });
+    tableMap[t.tableNumber] = tableRecord.id;
   }
 
   // 4. Categories
@@ -65,7 +78,10 @@ async function main() {
   for (const cat of categories) {
     const created = await prisma.category.upsert({
       where: { slug: cat.slug },
-      update: {},
+      update: {
+        iconUrl: cat.iconUrl,
+        displayOrder: cat.displayOrder,
+      },
       create: cat,
     });
     catMap[cat.slug] = created.id;
@@ -139,17 +155,129 @@ async function main() {
     },
   ];
 
+  const itemMap = {};
   for (const dish of dishes) {
     const categoryId = catMap[dish.categorySlug];
     if (categoryId) {
-      await prisma.menuItem.create({
+      let existing = await prisma.menuItem.findFirst({
+        where: { name: dish.name },
+      });
+      if (!existing) {
+        existing = await prisma.menuItem.create({
+          data: {
+            name: dish.name,
+            categoryId: categoryId,
+            price: dish.price,
+            description: dish.description,
+            imageUrl: dish.imageUrl,
+            badge: dish.badge,
+          },
+        });
+      }
+      itemMap[dish.name] = existing;
+    }
+  }
+
+  // 6. Initial Active Orders
+  const initialOrders = [
+    {
+      orderCode: 'ORD-1006',
+      tableNumber: 'T6',
+      customerName: 'James Hall',
+      orderType: 'DINE_IN',
+      status: 'READY',
+      items: [
+        { name: 'Italian Pasta', price: 20.36, qty: 2 },
+        { name: 'Burger Delux', price: 18.35, qty: 3 },
+        { name: 'Japanese Sushi', price: 10.15, qty: 2 },
+        { name: 'Orginal Meat Burger', price: 35.49, qty: 1 },
+      ],
+    },
+    {
+      orderCode: 'ORD-1007',
+      tableNumber: 'T7',
+      customerName: 'John Dukes',
+      orderType: 'DINE_IN',
+      status: 'IN_PROCESS',
+      items: [
+        { name: 'Mozarella Pizza', price: 46.23, qty: 1 },
+        { name: 'Milky Banana Juice', price: 18.23, qty: 2 },
+      ],
+    },
+    {
+      orderCode: 'ORD-1008',
+      tableNumber: 'T8',
+      customerName: 'Paula Mora',
+      orderType: 'DINE_IN',
+      status: 'IN_PROCESS',
+      items: [
+        { name: 'Tacos Salsa With Chicken', price: 35.49, qty: 2 },
+        { name: 'Burger Delux', price: 18.35, qty: 3 },
+        { name: 'Milky Banana Juice', price: 18.23, qty: 2 },
+      ],
+    },
+  ];
+
+  for (const o of initialOrders) {
+    const tableId = tableMap[o.tableNumber];
+    const subtotal = o.items.reduce((s, i) => s + i.price * i.qty, 0);
+    const taxAmount = subtotal * 0.1;
+    const discountAmount = subtotal * 0.2;
+    const totalAmount = subtotal + taxAmount - discountAmount;
+
+    let order = await prisma.order.findUnique({
+      where: { orderCode: o.orderCode },
+    });
+
+    if (!order) {
+      order = await prisma.order.create({
         data: {
-          name: dish.name,
-          categoryId: categoryId,
-          price: dish.price,
-          description: dish.description,
-          imageUrl: dish.imageUrl,
-          badge: dish.badge,
+          orderCode: o.orderCode,
+          tableId: tableId,
+          customerName: o.customerName,
+          orderType: o.orderType,
+          status: o.status,
+          subtotal: subtotal,
+          taxRate: 10.0,
+          taxAmount: taxAmount,
+          discountAmount: discountAmount,
+          totalAmount: totalAmount,
+          orderItems: {
+            create: o.items.map((it) => {
+              const menuItem = itemMap[it.name];
+              return {
+                itemId: menuItem ? menuItem.id : null,
+                itemName: it.name,
+                unitPrice: it.price,
+                quantity: it.qty,
+                lineTotal: it.price * it.qty,
+              };
+            }),
+          },
+        },
+      });
+    }
+  }
+
+  // 7. Initial Reservations
+  const reservations = [
+    { customerName: 'Michael Scott', tableNumber: 'T1', guestCount: 4, reservationTime: new Date(Date.now() + 3600000 * 2) },
+    { customerName: 'Pam Beesly', tableNumber: 'T4', guestCount: 2, reservationTime: new Date(Date.now() + 3600000 * 3) },
+  ];
+
+  for (const r of reservations) {
+    const tableId = tableMap[r.tableNumber];
+    const existing = await prisma.reservation.findFirst({
+      where: { customerName: r.customerName, tableId: tableId },
+    });
+    if (!existing) {
+      await prisma.reservation.create({
+        data: {
+          customerName: r.customerName,
+          tableId: tableId,
+          guestCount: r.guestCount,
+          reservationTime: r.reservationTime,
+          status: 'CONFIRMED',
         },
       });
     }

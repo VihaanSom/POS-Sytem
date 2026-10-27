@@ -1,28 +1,11 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { DEFAULT_DISHES, INITIAL_ORDERS, INITIAL_RESERVATIONS, INITIAL_SETTINGS } from '../data/initialData';
-
-/**
- * ============================================================================
- * LEARNING NOTE: WHAT IS REACT CONTEXT?
- * ============================================================================
- * In your old vanilla JavaScript (dashboard.js), you had global variables
- * like `activeOrders`, `currentSelectedTable`, and `TAX_RATE`. Any function
- * could modify them, and you had to manually call `renderDishesGrid()`,
- * `renderCart()`, `renderOrderLists()`, etc., every time anything changed!
- *
- * In React, we use "Context" + "State":
- * 1. State: Whenever state changes using a `set...` function, React automatically
- *    re-renders only the components that use that data. No manual DOM manipulation!
- * 2. Context: Allows ANY component in your application to access or update
- *    this state by simply calling `usePos()`, without passing props through
- *    every intermediate component.
- * ============================================================================
- */
+import api from '../services/api';
 
 const PosContext = createContext();
 
 export function PosProvider({ children }) {
-  // 1. ORDERS STATE (persisted to localStorage)
+  // 1. ORDERS STATE
   const [orders, setOrders] = useState(() => {
     const saved = localStorage.getItem('dashpoint_orders');
     return saved ? JSON.parse(saved) : INITIAL_ORDERS;
@@ -31,11 +14,8 @@ export function PosProvider({ children }) {
   // 2. ACTIVE TABLE SELECTION
   const [activeTable, setActiveTable] = useState('T6');
 
-  // 3. CUSTOM DISHES ADDED BY USER
-  const [customDishes, setCustomDishes] = useState(() => {
-    const saved = localStorage.getItem('dashpoint_custom_dishes');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // 3. MENU DISHES (Loaded from PostgreSQL backend)
+  const [allDishes, setAllDishes] = useState(DEFAULT_DISHES);
 
   // 4. RESERVATIONS
   const [reservations, setReservations] = useState(() => {
@@ -44,7 +24,7 @@ export function PosProvider({ children }) {
   });
 
   // 5. SETTINGS (Tax %, Discount %, Currency)
-  const [settings, setSettings] = useState(() => {
+  const [settings, setSettingsState] = useState(() => {
     const saved = localStorage.getItem('dashpoint_settings');
     return saved ? JSON.parse(saved) : INITIAL_SETTINGS;
   });
@@ -72,14 +52,23 @@ export function PosProvider({ children }) {
   // 9. TOAST NOTIFICATIONS
   const [toasts, setToasts] = useState([]);
 
+  // Toast Helper
+  const showToast = useCallback((message, type = 'info') => {
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3500);
+  }, []);
+
+  const removeToast = (id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
   // Sync state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('dashpoint_orders', JSON.stringify(orders));
   }, [orders]);
-
-  useEffect(() => {
-    localStorage.setItem('dashpoint_custom_dishes', JSON.stringify(customDishes));
-  }, [customDishes]);
 
   useEffect(() => {
     localStorage.setItem('dashpoint_reservations', JSON.stringify(reservations));
@@ -97,28 +86,64 @@ export function PosProvider({ children }) {
     }
   }, [user]);
 
+  // Initial Load: Fetch live data from backend API
+  useEffect(() => {
+    async function loadInitialData() {
+      try {
+        // Fetch Settings
+        api.settings.get()
+          .then((data) => {
+            if (data) setSettingsState(data);
+          })
+          .catch((err) => console.warn('Could not fetch settings from backend:', err));
+
+        // Fetch Dishes
+        api.dishes.getAll()
+          .then((dishes) => {
+            if (dishes && dishes.length > 0) setAllDishes(dishes);
+          })
+          .catch((err) => console.warn('Could not fetch dishes from backend:', err));
+
+        // Fetch Orders
+        api.orders.getAll()
+          .then((activeOrders) => {
+            if (activeOrders && Array.isArray(activeOrders)) setOrders(activeOrders);
+          })
+          .catch((err) => console.warn('Could not fetch orders from backend:', err));
+
+        // Fetch Reservations
+        api.reservations.getAll()
+          .then((resList) => {
+            if (resList && Array.isArray(resList)) setReservations(resList);
+          })
+          .catch((err) => console.warn('Could not fetch reservations from backend:', err));
+
+        // Verify user session if token exists
+        const token = localStorage.getItem('dashpoint_token');
+        if (token && !user) {
+          api.auth.me()
+            .then((res) => {
+              if (res?.user) setUser(res.user);
+            })
+            .catch(() => {
+              localStorage.removeItem('dashpoint_token');
+            });
+        }
+      } catch (err) {
+        console.error('Initial data loading error:', err);
+      }
+    }
+
+    loadInitialData();
+  }, []);
+
   // Logout helper
   const logout = () => {
     setUser(null);
     localStorage.removeItem('dashpoint_current_user');
+    localStorage.removeItem('dashpoint_token');
     showToast('You have been logged out.', 'info');
   };
-
-  // Toast Helper
-  const showToast = (message, type = 'info') => {
-    const id = Date.now() + Math.random();
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3500);
-  };
-
-  const removeToast = (id) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  };
-
-  // Combine default dishes with custom user-created dishes
-  const allDishes = [...DEFAULT_DISHES, ...customDishes];
 
   // Active Order is the order currently loaded into the right billing sidebar
   const activeOrder = orders.find((o) => o.table === activeTable) || null;
@@ -131,8 +156,28 @@ export function PosProvider({ children }) {
   const discountAmount = subtotal * (settings.discount / 100);
   const grandTotal = Math.max(0, subtotal + taxAmount - discountAmount);
 
+  // Sync an order with the backend
+  const syncOrderWithBackend = async (orderToSync) => {
+    try {
+      if (orderToSync.dbId || (orderToSync.id && orderToSync.id.startsWith('ORD-'))) {
+        await api.orders.update(orderToSync.id, orderToSync);
+      } else {
+        const created = await api.orders.create(orderToSync);
+        if (created?.id) {
+          setOrders((prev) =>
+            prev.map((o) => (o.table === orderToSync.table ? created : o))
+          );
+        }
+      }
+    } catch (err) {
+      console.error('Failed to sync order with backend:', err);
+    }
+  };
+
   // CART ACTIONS: Add item to the active table order
-  const addToCart = (dish) => {
+  const addToCart = async (dish) => {
+    let orderToSync = null;
+
     setOrders((prevOrders) => {
       const orderIndex = prevOrders.findIndex((o) => o.table === activeTable);
 
@@ -146,6 +191,7 @@ export function PosProvider({ children }) {
           status: 'in process',
           items: [{ ...dish, qty: 1 }]
         };
+        orderToSync = newOrder;
         showToast(`Started new order on Table ${activeTable}`, 'success');
         return [...prevOrders, newOrder];
       }
@@ -155,29 +201,34 @@ export function PosProvider({ children }) {
 
       let updatedItems;
       if (existingItemIndex > -1) {
-        // Increment quantity of existing item
         updatedItems = existingOrder.items.map((item, idx) =>
           idx === existingItemIndex ? { ...item, qty: item.qty + 1 } : item
         );
       } else {
-        // Append new item with qty 1
         updatedItems = [...existingOrder.items, { ...dish, qty: 1 }];
       }
 
+      const updatedOrder = { ...existingOrder, items: updatedItems };
+      orderToSync = updatedOrder;
       showToast(`Added "${dish.name}" to Table ${activeTable}`, 'info');
 
       return prevOrders.map((order, idx) =>
-        idx === orderIndex ? { ...order, items: updatedItems } : order
+        idx === orderIndex ? updatedOrder : order
       );
     });
+
+    if (orderToSync) {
+      syncOrderWithBackend(orderToSync);
+    }
   };
 
   // Update item quantity in active order (+1 or -1)
   const updateItemQty = (dishId, delta) => {
     if (!activeOrder) return;
+    let orderToSync = null;
 
-    setOrders((prevOrders) =>
-      prevOrders
+    setOrders((prevOrders) => {
+      const nextOrders = prevOrders
         .map((order) => {
           if (order.table !== activeTable) return order;
 
@@ -189,123 +240,190 @@ export function PosProvider({ children }) {
               }
               return item;
             })
-            .filter(Boolean); // Remove null items whose quantity reached 0
+            .filter(Boolean);
 
-          return { ...order, items: updatedItems };
+          const updatedOrder = { ...order, items: updatedItems };
+          orderToSync = updatedOrder;
+          return updatedOrder;
         })
-        .filter((order) => order.items.length > 0) // Remove empty orders if desired
-    );
+        .filter((order) => order.items.length > 0);
+
+      return nextOrders;
+    });
+
+    if (orderToSync) {
+      syncOrderWithBackend(orderToSync);
+    }
   };
 
   // Remove item directly from cart
   const removeFromCart = (dishId) => {
     if (!activeOrder) return;
+    let orderToSync = null;
+
     setOrders((prevOrders) =>
       prevOrders.map((order) => {
         if (order.table !== activeTable) return order;
-        return {
+        const updated = {
           ...order,
           items: order.items.filter((item) => item.id !== dishId)
         };
+        orderToSync = updated;
+        return updated;
       })
     );
+
     showToast('Item removed from order', 'info');
+    if (orderToSync) {
+      syncOrderWithBackend(orderToSync);
+    }
   };
 
   // Set order type ('dine-in' | 'take-away' | 'delivery')
   const setOrderType = (type) => {
     if (!activeOrder) return;
+    const updated = { ...activeOrder, orderType: type };
     setOrders((prevOrders) =>
-      prevOrders.map((o) => (o.table === activeTable ? { ...o, orderType: type } : o))
+      prevOrders.map((o) => (o.table === activeTable ? updated : o))
     );
+    syncOrderWithBackend(updated);
   };
 
   // Create or Update Order (via Modal)
-  const saveOrder = (orderData) => {
-    if (orderData.id) {
-      // Editing existing order
-      setOrders((prev) =>
-        prev.map((o) => (o.id === orderData.id ? { ...o, ...orderData } : o))
-      );
-      showToast(`Order ${orderData.id} updated`, 'success');
-    } else {
-      // Creating a new order
-      const newOrder = {
-        ...orderData,
-        id: `ORD-${Date.now().toString().slice(-4)}`,
-        items: orderData.items || []
-      };
-      setOrders((prev) => [...prev, newOrder]);
-      setActiveTable(newOrder.table);
-      showToast(`Created order for Table ${newOrder.table}`, 'success');
+  const saveOrder = async (orderData) => {
+    try {
+      if (orderData.id) {
+        // Editing existing order
+        const updated = await api.orders.update(orderData.id, orderData).catch(() => orderData);
+        setOrders((prev) =>
+          prev.map((o) => (o.id === orderData.id ? { ...o, ...updated } : o))
+        );
+        showToast(`Order ${orderData.id} updated`, 'success');
+      } else {
+        // Creating a new order
+        const created = await api.orders.create(orderData).catch(() => ({
+          ...orderData,
+          id: `ORD-${Date.now().toString().slice(-4)}`,
+          items: orderData.items || []
+        }));
+        setOrders((prev) => [...prev, created]);
+        setActiveTable(created.table);
+        showToast(`Created order for Table ${created.table}`, 'success');
+      }
+    } catch (err) {
+      console.error('Error saving order:', err);
+      showToast('Failed to save order on server', 'error');
     }
+
     setIsCreateOrderOpen(false);
     setOrderToEdit(null);
   };
 
   // Delete an order
-  const deleteOrder = (orderId) => {
+  const deleteOrder = async (orderId) => {
+    try {
+      await api.orders.delete(orderId).catch(console.error);
+    } catch (err) {
+      console.error('Error deleting order:', err);
+    }
     setOrders((prev) => prev.filter((o) => o.id !== orderId));
     showToast(`Order deleted`, 'info');
   };
 
   // Settle / Pay bill
-  const payBill = (paymentMethod) => {
+  const payBill = async (paymentMethod) => {
     if (!activeOrder || activeOrder.items.length === 0) {
       showToast('No items to pay for!', 'error');
       return;
     }
 
-    // Prepare receipt data
-    const receipt = {
-      orderId: activeOrder.id,
-      table: activeOrder.table,
-      customer: activeOrder.customer,
-      orderType: activeOrder.orderType,
-      items: [...activeOrder.items],
-      subtotal,
-      taxPercent: settings.tax,
-      taxAmount,
-      discountPercent: settings.discount,
-      discountAmount,
-      grandTotal,
-      paymentMethod,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })
-    };
+    try {
+      // Call backend payment API
+      const res = await api.orders.pay(activeOrder.id, paymentMethod);
+      const receipt = res.receipt || {
+        orderId: activeOrder.id,
+        table: activeOrder.table,
+        customer: activeOrder.customer,
+        orderType: activeOrder.orderType,
+        items: [...activeOrder.items],
+        subtotal,
+        taxPercent: settings.tax,
+        taxAmount,
+        discountPercent: settings.discount,
+        discountAmount,
+        grandTotal,
+        paymentMethod,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })
+      };
 
-    // Remove paid order from active orders list
-    setOrders((prev) => prev.filter((o) => o.id !== activeOrder.id));
+      // Remove paid order from active orders list
+      setOrders((prev) => prev.filter((o) => o.id !== activeOrder.id));
 
-    // Show receipt modal
-    setReceiptData(receipt);
-    showToast(`Bill paid successfully via ${paymentMethod}!`, 'success');
+      // Show receipt modal
+      setReceiptData(receipt);
+      showToast(`Bill paid successfully via ${paymentMethod}!`, 'success');
+    } catch (err) {
+      console.error('Payment error:', err);
+      showToast(err.message || 'Payment processing failed', 'error');
+    }
   };
 
   // Add a custom dish
-  const addCustomDish = (dish) => {
-    const newDish = {
-      ...dish,
-      id: `dish-${Date.now().toString().slice(-4)}`
-    };
-    setCustomDishes((prev) => [newDish, ...prev]);
-    showToast(`Added "${dish.name}" to the menu`, 'success');
-    setIsAddDishOpen(false);
+  const addCustomDish = async (dish) => {
+    try {
+      const created = await api.dishes.create(dish);
+      setAllDishes((prev) => [created, ...prev]);
+      showToast(`Added "${dish.name}" to the menu`, 'success');
+      setIsAddDishOpen(false);
+    } catch (err) {
+      console.error('Add custom dish error:', err);
+      // Fallback
+      const newDish = {
+        ...dish,
+        id: `dish-${Date.now().toString().slice(-4)}`
+      };
+      setAllDishes((prev) => [newDish, ...prev]);
+      showToast(`Added "${dish.name}" to menu (local fallback)`, 'success');
+      setIsAddDishOpen(false);
+    }
   };
 
   // Add reservation
-  const addReservation = (reservation) => {
-    const newRes = {
-      ...reservation,
-      id: Date.now()
-    };
-    setReservations((prev) => [newRes, ...prev]);
-    showToast(`Table ${reservation.table} reserved for ${reservation.name}`, 'success');
+  const addReservation = async (reservation) => {
+    try {
+      const created = await api.reservations.create(reservation);
+      setReservations((prev) => [created, ...prev]);
+      showToast(`Table ${reservation.table} reserved for ${reservation.name}`, 'success');
+    } catch (err) {
+      console.error('Add reservation error:', err);
+      const newRes = {
+        ...reservation,
+        id: Date.now()
+      };
+      setReservations((prev) => [newRes, ...prev]);
+      showToast(`Table ${reservation.table} reserved for ${reservation.name}`, 'success');
+    }
   };
 
   // Delete reservation
-  const deleteReservation = (id) => {
+  const deleteReservation = async (id) => {
+    try {
+      await api.reservations.delete(id).catch(console.error);
+    } catch (err) {
+      console.error('Delete reservation error:', err);
+    }
     setReservations((prev) => prev.filter((r) => r.id !== id));
     showToast('Reservation removed', 'info');
+  };
+
+  // Update Settings
+  const setSettings = async (newSettings) => {
+    setSettingsState(newSettings);
+    try {
+      await api.settings.update(newSettings);
+    } catch (err) {
+      console.error('Failed to update settings in backend:', err);
+    }
   };
 
   // Modals controls
@@ -336,7 +454,6 @@ export function PosProvider({ children }) {
     activeTable,
     setActiveTable,
     allDishes,
-    customDishes,
     reservations,
     settings,
     setSettings,
@@ -385,7 +502,6 @@ export function PosProvider({ children }) {
   return <PosContext.Provider value={value}>{children}</PosContext.Provider>;
 }
 
-// Custom hook so any component can simply call: const { activeOrder, addToCart } = usePos();
 export function usePos() {
   const context = useContext(PosContext);
   if (!context) {

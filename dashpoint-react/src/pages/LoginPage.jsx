@@ -1,44 +1,49 @@
 import React, { useState } from 'react';
 import { Lock, Mail, ArrowRight } from 'lucide-react';
 import { usePos } from '../context/PosContext';
+import api from '../services/api';
 
 export default function LoginPage({ onNavigate }) {
   const { setUser, showToast } = usePos();
-  const [email, setEmail] = useState('easton@dashpoint.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('admin@dashpoint.pos');
+  const [password, setPassword] = useState('admin123');
+  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   const validate = () => {
     const errs = {};
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!email.trim()) {
-      errs.email = 'Email address is required.';
-    } else if (!emailRegex.test(email.trim())) {
-      errs.email = 'Please enter a valid email address.';
+      errs.email = 'Email address or username is required.';
     }
 
     if (!password) {
       errs.password = 'Password is required.';
-    } else if (password.length < 6) {
-      errs.password = 'Password must be at least 6 characters.';
+    } else if (password.length < 5) {
+      errs.password = 'Password must be at least 5 characters.';
     }
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
-    setUser({
-      name: 'Easton Cox',
-      email: email.trim(),
-      role: 'Store Manager'
-    });
-
-    showToast('Welcome back, Easton! Opening POS...', 'success');
-    onNavigate('dashboard');
+    setLoading(true);
+    try {
+      const res = await api.auth.login({ email: email.trim(), password });
+      if (res.token) {
+        localStorage.setItem('dashpoint_token', res.token);
+      }
+      setUser(res.user);
+      showToast(`Welcome back, ${res.user.name}! Opening POS...`, 'success');
+      onNavigate('dashboard');
+    } catch (err) {
+      showToast(err.message || 'Invalid credentials', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -84,8 +89,8 @@ export default function LoginPage({ onNavigate }) {
             {errors.password && <div className="error-text">{errors.password}</div>}
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.85rem' }}>
-            Log In to POS <ArrowRight size={16} />
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.85rem' }} disabled={loading}>
+            {loading ? 'Logging in...' : <>Log In to POS <ArrowRight size={16} /></>}
           </button>
         </form>
 
