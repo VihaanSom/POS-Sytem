@@ -20,6 +20,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health Check
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'DashPoint POS Backend',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',

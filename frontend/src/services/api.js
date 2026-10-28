@@ -3,7 +3,9 @@
  * Connects frontend directly with backend Express + PostgreSQL server.
  */
 
-const BASE_URL = '/api';
+const BASE_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL.replace(/\/+$/, '')}/api`
+  : '/api';
 
 async function request(endpoint, options = {}) {
   const token = localStorage.getItem('dashpoint_token');
