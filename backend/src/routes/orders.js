@@ -28,6 +28,65 @@ function formatOrder(order) {
   };
 }
 
+// Helper to map paymentMethod string to Prisma enum
+function mapPaymentMethod(method) {
+  const m = (method || '').toUpperCase();
+  if (m.includes('CARD') || m.includes('DEBIT') || m.includes('CREDIT')) return 'CARD';
+  if (m.includes('WALLET') || m.includes('UPI') || m.includes('ONLINE') || m.includes('E-WALLET')) return 'UPI';
+  return 'CASH';
+}
+
+// Generate unique order code
+async function generateUniqueOrderCode() {
+  let code = '';
+  let exists = true;
+  let attempts = 0;
+  while (exists && attempts < 10) {
+    attempts++;
+    const rand = Math.floor(1000 + Math.random() * 9000);
+    code = `ORD-${Date.now().toString().slice(-4)}${rand}`.slice(0, 20);
+    const found = await prisma.order.findUnique({ where: { orderCode: code } });
+    if (!found) exists = false;
+  }
+  return code || `ORD-${Date.now()}`.slice(0, 20);
+}
+
+// Helper to safely resolve menu item foreign keys (nullable if not in DB)
+async function resolveItemIds(items = []) {
+  const ids = items
+    .map((i) => {
+      const raw = i.id ? String(i.id).replace('dish-', '') : null;
+      return raw && !isNaN(raw) ? parseInt(raw) : null;
+    })
+    .filter(Boolean);
+
+  let validIds = new Set();
+  if (ids.length > 0) {
+    try {
+      const validRecords = await prisma.menuItem.findMany({
+        where: { id: { in: ids } },
+        select: { id: true },
+      });
+      validIds = new Set(validRecords.map((r) => r.id));
+    } catch {
+      validIds = new Set();
+    }
+  }
+
+  return items.map((i) => {
+    const raw = i.id ? String(i.id).replace('dish-', '') : null;
+    const parsed = raw && !isNaN(raw) ? parseInt(raw) : null;
+    return {
+      itemId: parsed && validIds.has(parsed) ? parsed : null,
+      itemName: i.name || 'Dish Item',
+      unitPrice: Number(i.price || 0),
+      quantity: Number(i.qty || 1),
+      lineTotal: Number(i.price || 0) * Number(i.qty || 1),
+      notes: i.notes || null,
+    };
+  });
+}
+
 // Helper to map orderType string
 function mapOrderType(typeStr) {
   const t = (typeStr || '').toLowerCase();
@@ -97,7 +156,8 @@ router.post('/', async (req, res) => {
       }
     }
 
-    const orderCode = `ORD-${Date.now().toString().slice(-4)}`;
+    const orderCode = await generateUniqueOrderCode();
+    const preparedItems = await resolveItemIds(items);
 
     const newOrder = await prisma.order.create({
       data: {
@@ -112,18 +172,7 @@ router.post('/', async (req, res) => {
         discountAmount,
         totalAmount,
         orderItems: {
-          create: items.map((i) => {
-            const rawId = i.id ? String(i.id).replace('dish-', '') : null;
-            const parsedItemId = rawId && !isNaN(rawId) ? parseInt(rawId) : null;
-            return {
-              itemId: parsedItemId,
-              itemName: i.name || 'Dish Item',
-              unitPrice: Number(i.price || 0),
-              quantity: Number(i.qty || 1),
-              lineTotal: Number(i.price || 0) * Number(i.qty || 1),
-              notes: notes || null,
-            };
-          }),
+          create: preparedItems,
         },
       },
       include: {
@@ -207,6 +256,8 @@ router.put('/:id', async (req, res) => {
       where: { orderId: existing.id },
     });
 
+    const preparedItems = await resolveItemIds(items);
+
     const updated = await prisma.order.update({
       where: { id: existing.id },
       data: {
@@ -219,18 +270,7 @@ router.put('/:id', async (req, res) => {
         discountAmount,
         totalAmount,
         orderItems: {
-          create: items.map((i) => {
-            const rawId = i.id ? String(i.id).replace('dish-', '') : null;
-            const parsedItemId = rawId && !isNaN(rawId) ? parseInt(rawId) : null;
-            return {
-              itemId: parsedItemId,
-              itemName: i.name || 'Dish Item',
-              unitPrice: Number(i.price || 0),
-              quantity: Number(i.qty || 1),
-              lineTotal: Number(i.price || 0) * Number(i.qty || 1),
-              notes: notes || null,
-            };
-          }),
+          create: preparedItems,
         },
       },
       include: {
@@ -295,13 +335,17 @@ router.delete('/:id', async (req, res) => {
 router.post('/:id/pay', async (req, res) => {
   try {
     const { id } = req.params;
-    const { paymentMethod = 'Cash' } = req.body;
+    const { paymentMethod = 'Cash', orderData, table: requestedTable } = req.body;
+    const validMethod = mapPaymentMethod(paymentMethod);
 
-    const order = await prisma.order.findFirst({
+    // 1. Look up existing order by orderCode, numeric id, or table
+    let order = await prisma.order.findFirst({
       where: {
         OR: [
           { orderCode: id },
           ...(isNaN(id) ? [] : [{ id: parseInt(id) }]),
+          ...(requestedTable ? [{ table: { tableNumber: requestedTable }, status: { in: ['PENDING', 'IN_PROCESS', 'READY'] } }] : []),
+          ...(id.startsWith('T') ? [{ table: { tableNumber: id }, status: { in: ['PENDING', 'IN_PROCESS', 'READY'] } }] : []),
         ],
       },
       include: {
@@ -312,16 +356,62 @@ router.post('/:id/pay', async (req, res) => {
           },
         },
       },
+      orderBy: { createdAt: 'desc' },
     });
 
+    const settings = await prisma.restaurantSettings.findFirst({ where: { id: 1 } });
+    const taxRate = settings ? Number(settings.defaultTaxRate) : 10.0;
+    const discountRate = settings ? Number(settings.defaultDiscountRate) : 20.0;
+
+    // 2. If order does NOT exist in DB yet, create it directly
     if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
+      const payload = orderData || req.body;
+      const items = payload.items || [];
+      const tableName = requestedTable || payload.table || (id.startsWith('T') ? id : null);
+
+      let tableRecord = null;
+      if (tableName && tableName !== 'Takeaway') {
+        tableRecord = await prisma.restaurantTable.findUnique({
+          where: { tableNumber: tableName },
+        });
+      }
+
+      const subtotal = items.reduce((sum, item) => sum + Number(item.price || 0) * (item.qty || 1), 0);
+      const taxAmount = subtotal * (taxRate / 100);
+      const discountAmount = subtotal * (discountRate / 100);
+      const totalAmount = Math.max(0, subtotal + taxAmount - discountAmount);
+
+      const orderCode = await generateUniqueOrderCode();
+      const preparedItems = await resolveItemIds(items);
+
+      order = await prisma.order.create({
+        data: {
+          orderCode,
+          tableId: tableRecord?.id || null,
+          customerName: (payload.customer || 'Guest').trim(),
+          orderType: mapOrderType(payload.orderType),
+          status: 'COMPLETED',
+          subtotal,
+          taxRate,
+          taxAmount,
+          discountAmount,
+          totalAmount,
+          orderItems: {
+            create: preparedItems,
+          },
+        },
+        include: {
+          table: true,
+          orderItems: {
+            include: {
+              menuItem: true,
+            },
+          },
+        },
+      });
     }
 
-    const methodUpper = paymentMethod.toUpperCase();
-    const validMethod = ['CASH', 'CARD', 'UPI'].includes(methodUpper) ? methodUpper : 'CASH';
-
-    // Create payment record
+    // 3. Upsert payment record in PostgreSQL
     await prisma.payment.upsert({
       where: { orderId: order.id },
       update: {
@@ -339,13 +429,13 @@ router.post('/:id/pay', async (req, res) => {
       },
     });
 
-    // Mark order as COMPLETED
+    // 4. Mark order as COMPLETED
     await prisma.order.update({
       where: { id: order.id },
       data: { status: 'COMPLETED' },
     });
 
-    // Free the table
+    // 5. Free the table
     if (order.tableId) {
       await prisma.restaurantTable.update({
         where: { id: order.tableId },
@@ -353,7 +443,6 @@ router.post('/:id/pay', async (req, res) => {
       });
     }
 
-    const settings = await prisma.restaurantSettings.findFirst({ where: { id: 1 } });
     const formatted = formatOrder(order);
 
     const receipt = {
@@ -365,7 +454,7 @@ router.post('/:id/pay', async (req, res) => {
       subtotal: Number(order.subtotal),
       taxPercent: Number(order.taxRate),
       taxAmount: Number(order.taxAmount),
-      discountPercent: settings ? Number(settings.defaultDiscountRate) : 20,
+      discountPercent: discountRate,
       discountAmount: Number(order.discountAmount),
       grandTotal: Number(order.totalAmount),
       paymentMethod,
@@ -378,7 +467,7 @@ router.post('/:id/pay', async (req, res) => {
     });
   } catch (error) {
     console.error('Process payment error:', error);
-    res.status(500).json({ error: 'Failed to process payment' });
+    res.status(500).json({ error: 'Failed to process payment: ' + (error.message || 'Server error') });
   }
 });
 

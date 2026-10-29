@@ -84,10 +84,14 @@ export const api = {
       request(`/orders/${id}`, {
         method: 'DELETE',
       }),
-    pay: (id, paymentMethod) =>
+    pay: (id, paymentMethod, orderData = null) =>
       request(`/orders/${id}/pay`, {
         method: 'POST',
-        body: JSON.stringify({ paymentMethod }),
+        body: JSON.stringify({
+          paymentMethod,
+          orderData,
+          table: orderData?.table,
+        }),
       }),
   },
 
