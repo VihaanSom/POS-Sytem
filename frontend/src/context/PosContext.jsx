@@ -152,21 +152,22 @@ export function PosProvider({ children }) {
   const discountAmount = subtotal * (settings.discount / 100);
   const grandTotal = Math.max(0, subtotal + taxAmount - discountAmount);
 
-  // Sync an order with the backend
+  // Sync an order with the backend (idempotent upsert)
   const syncOrderWithBackend = async (orderToSync) => {
     try {
-      if (orderToSync.dbId) {
-        await api.orders.update(orderToSync.id, orderToSync);
-      } else {
-        const created = await api.orders.create(orderToSync);
-        if (created?.id) {
-          setOrders((prev) =>
-            prev.map((o) => (o.table === orderToSync.table ? created : o))
-          );
-        }
+      const targetId = orderToSync.dbId || orderToSync.id || orderToSync.table;
+      const synced = await api.orders.update(targetId, {
+        ...orderToSync,
+        table: orderToSync.table,
+      });
+
+      if (synced?.id) {
+        setOrders((prev) =>
+          prev.map((o) => (o.table === orderToSync.table ? { ...o, ...synced } : o))
+        );
       }
     } catch (err) {
-      console.error('Failed to sync order with backend:', err);
+      console.warn('Sync order fallback:', err.message);
     }
   };
 
@@ -322,9 +323,9 @@ export function PosProvider({ children }) {
   // Delete an order
   const deleteOrder = async (orderId) => {
     try {
-      await api.orders.delete(orderId).catch(console.error);
-    } catch (err) {
-      console.error('Error deleting order:', err);
+      await api.orders.delete(orderId).catch(() => {});
+    } catch {
+      // Ignored
     } finally {
       setOrders((prev) => prev.filter((o) => o.id !== orderId));
       showToast(`Order deleted`, 'info');

@@ -12,14 +12,14 @@ function formatOrder(order) {
     table: tableNumber,
     customer: order.customerName,
     orderType: order.orderType.toLowerCase().replace('_', '-'),
-    status: order.status === 'READY' ? 'Ready' : 'in process',
+    status: order.status === 'READY' ? 'Ready' : order.status === 'COMPLETED' ? 'Completed' : 'in process',
     subtotal: Number(order.subtotal),
     taxAmount: Number(order.taxAmount),
     discountAmount: Number(order.discountAmount),
     totalAmount: Number(order.totalAmount),
     items: (order.orderItems || []).map((item) => ({
-      id: item.itemId ? `dish-${item.itemId}` : `dish-${item.id}`,
-      dbId: item.id,
+      id: item.itemId ? `dish-${item.itemId}` : `item-${item.id}`,
+      dbId: item.itemId || item.id,
       name: item.itemName,
       price: Number(item.unitPrice),
       qty: item.quantity,
@@ -41,7 +41,7 @@ async function generateUniqueOrderCode() {
   let code = '';
   let exists = true;
   let attempts = 0;
-  while (exists && attempts < 10) {
+  while (exists && attempts < 15) {
     attempts++;
     const rand = Math.floor(1000 + Math.random() * 9000);
     code = `ORD-${Date.now().toString().slice(-4)}${rand}`.slice(0, 20);
@@ -51,33 +51,45 @@ async function generateUniqueOrderCode() {
   return code || `ORD-${Date.now()}`.slice(0, 20);
 }
 
-// Helper to safely resolve menu item foreign keys (nullable if not in DB)
+// Helper to safely resolve menu item foreign keys (linking to MenuItem)
 async function resolveItemIds(items = []) {
-  const ids = items
-    .map((i) => {
-      const raw = i.id ? String(i.id).replace('dish-', '') : null;
-      return raw && !isNaN(raw) ? parseInt(raw) : null;
-    })
-    .filter(Boolean);
+  if (!items || items.length === 0) return [];
 
-  let validIds = new Set();
-  if (ids.length > 0) {
-    try {
-      const validRecords = await prisma.menuItem.findMany({
-        where: { id: { in: ids } },
-        select: { id: true },
-      });
-      validIds = new Set(validRecords.map((r) => r.id));
-    } catch {
-      validIds = new Set();
-    }
+  let allMenuItems = [];
+  try {
+    allMenuItems = await prisma.menuItem.findMany({
+      select: { id: true, name: true }
+    });
+  } catch (err) {
+    console.warn('Could not query menu items for FK resolution:', err.message);
   }
 
+  const idMap = new Map(allMenuItems.map((m) => [m.id, m.id]));
+  const nameMap = new Map(allMenuItems.map((m) => [m.name.toLowerCase().trim(), m.id]));
+
   return items.map((i) => {
-    const raw = i.id ? String(i.id).replace('dish-', '') : null;
-    const parsed = raw && !isNaN(raw) ? parseInt(raw) : null;
+    let resolvedId = null;
+
+    // 1. Direct numeric dbId or id
+    if (i.dbId && idMap.has(Number(i.dbId))) {
+      resolvedId = Number(i.dbId);
+    } else if (i.id) {
+      const numericId = parseInt(String(i.id).replace('dish-', ''));
+      if (!isNaN(numericId) && idMap.has(numericId)) {
+        resolvedId = numericId;
+      }
+    }
+
+    // 2. Fallback: match by dish name
+    if (!resolvedId && i.name) {
+      const cleanName = String(i.name).toLowerCase().trim();
+      if (nameMap.has(cleanName)) {
+        resolvedId = nameMap.get(cleanName);
+      }
+    }
+
     return {
-      itemId: parsed && validIds.has(parsed) ? parsed : null,
+      itemId: resolvedId, // Valid foreign key if found, safely null if custom dish
       itemName: i.name || 'Dish Item',
       unitPrice: Number(i.price || 0),
       quantity: Number(i.qty || 1),
@@ -102,6 +114,21 @@ function mapOrderStatus(statusStr) {
   if (s === 'completed') return 'COMPLETED';
   if (s === 'cancelled') return 'CANCELLED';
   return 'IN_PROCESS';
+}
+
+// Helper to find restaurant table record safely
+async function findTableRecord(table) {
+  if (!table || table === 'Takeaway') return null;
+  const clean = String(table).trim().toUpperCase();
+  return await prisma.restaurantTable.findFirst({
+    where: {
+      OR: [
+        { tableNumber: clean },
+        { tableNumber: clean.replace('TABLE ', 'T') },
+        ...(isNaN(clean.replace('T', '')) ? [] : [{ id: parseInt(clean.replace('T', '')) }]),
+      ],
+    },
+  });
 }
 
 // GET /api/orders (Active orders)
@@ -129,10 +156,24 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST /api/orders (Create Order)
+// POST /api/orders (Create or Update Active Order for Table)
 router.post('/', async (req, res) => {
   try {
     const { customer, table, orderType, status, items = [], notes } = req.body;
+    const tableRecord = await findTableRecord(table);
+
+    // If an active order already exists on this table, update it instead of creating duplicates
+    let existing = null;
+    if (tableRecord) {
+      existing = await prisma.order.findFirst({
+        where: {
+          tableId: tableRecord.id,
+          status: { in: ['PENDING', 'IN_PROCESS', 'READY'] },
+        },
+        include: { table: true },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
 
     const settings = await prisma.restaurantSettings.findFirst({ where: { id: 1 } });
     const taxRate = settings ? Number(settings.defaultTaxRate) : 10.0;
@@ -142,75 +183,88 @@ router.post('/', async (req, res) => {
     const taxAmount = subtotal * (taxRate / 100);
     const discountAmount = subtotal * (discountRate / 100);
     const totalAmount = Math.max(0, subtotal + taxAmount - discountAmount);
+    const preparedItems = await resolveItemIds(items);
+    const userId = req.user?.id || (req.body.userId ? parseInt(req.body.userId) : null) || 1;
 
-    let tableRecord = null;
-    if (table && table !== 'Takeaway') {
-      tableRecord = await prisma.restaurantTable.findUnique({
-        where: { tableNumber: table },
+    let resultOrder;
+    if (existing) {
+      await prisma.orderItem.deleteMany({ where: { orderId: existing.id } });
+      resultOrder = await prisma.order.update({
+        where: { id: existing.id },
+        data: {
+          userId: existing.userId || userId,
+          customerName: customer !== undefined ? customer.trim() : existing.customerName,
+          orderType: orderType ? mapOrderType(orderType) : existing.orderType,
+          status: status ? mapOrderStatus(status) : existing.status,
+          subtotal,
+          taxRate,
+          taxAmount,
+          discountAmount,
+          totalAmount,
+          orderItems: { create: preparedItems },
+        },
+        include: {
+          table: true,
+          orderItems: { include: { menuItem: true } },
+        },
       });
+    } else {
       if (tableRecord) {
         await prisma.restaurantTable.update({
           where: { id: tableRecord.id },
           data: { status: 'OCCUPIED' },
         });
       }
+
+      const orderCode = await generateUniqueOrderCode();
+      resultOrder = await prisma.order.create({
+        data: {
+          orderCode,
+          tableId: tableRecord?.id || null,
+          userId,
+          customerName: (customer || `Guest (${tableRecord?.tableNumber || 'Takeaway'})`).trim(),
+          orderType: mapOrderType(orderType),
+          status: mapOrderStatus(status),
+          subtotal,
+          taxRate,
+          taxAmount,
+          discountAmount,
+          totalAmount,
+          orderItems: { create: preparedItems },
+        },
+        include: {
+          table: true,
+          orderItems: { include: { menuItem: true } },
+        },
+      });
     }
 
-    const orderCode = await generateUniqueOrderCode();
-    const preparedItems = await resolveItemIds(items);
-
-    const newOrder = await prisma.order.create({
-      data: {
-        orderCode,
-        tableId: tableRecord?.id || null,
-        customerName: (customer || 'Guest').trim(),
-        orderType: mapOrderType(orderType),
-        status: mapOrderStatus(status),
-        subtotal,
-        taxRate,
-        taxAmount,
-        discountAmount,
-        totalAmount,
-        orderItems: {
-          create: preparedItems,
-        },
-      },
-      include: {
-        table: true,
-        orderItems: {
-          include: {
-            menuItem: true,
-          },
-        },
-      },
-    });
-
-    res.status(201).json(formatOrder(newOrder));
+    res.status(201).json(formatOrder(resultOrder));
   } catch (error) {
     console.error('Create order error:', error);
-    res.status(500).json({ error: 'Failed to create order' });
+    res.status(500).json({ error: 'Failed to create order: ' + error.message });
   }
 });
 
-// PUT /api/orders/:id (Update Order)
+// PUT /api/orders/:id (Idempotent Update or Upsert Order)
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { customer, table, orderType, status, items = [], notes } = req.body;
+    const tableRecord = await findTableRecord(table);
 
-    const existing = await prisma.order.findFirst({
+    // Look for existing order by orderCode, numeric id, or active table order
+    let existing = await prisma.order.findFirst({
       where: {
         OR: [
           { orderCode: id },
           ...(isNaN(id) ? [] : [{ id: parseInt(id) }]),
+          ...(tableRecord ? [{ tableId: tableRecord.id, status: { in: ['PENDING', 'IN_PROCESS', 'READY'] } }] : []),
         ],
       },
       include: { table: true },
+      orderBy: { createdAt: 'desc' },
     });
-
-    if (!existing) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
 
     const settings = await prisma.restaurantSettings.findFirst({ where: { id: 1 } });
     const taxRate = settings ? Number(settings.defaultTaxRate) : 10.0;
@@ -220,77 +274,90 @@ router.put('/:id', async (req, res) => {
     const taxAmount = subtotal * (taxRate / 100);
     const discountAmount = subtotal * (discountRate / 100);
     const totalAmount = Math.max(0, subtotal + taxAmount - discountAmount);
+    const preparedItems = await resolveItemIds(items);
+    const userId = req.user?.id || (req.body.userId ? parseInt(req.body.userId) : null) || 1;
 
-    let tableId = existing.tableId;
-    if (table && (!existing.table || existing.table.tableNumber !== table)) {
-      if (table === 'Takeaway') {
+    let orderResult;
+    if (existing) {
+      let tableId = existing.tableId;
+      if (tableRecord && existing.tableId !== tableRecord.id) {
         if (existing.tableId) {
           await prisma.restaurantTable.update({
             where: { id: existing.tableId },
             data: { status: 'AVAILABLE' },
           });
         }
-        tableId = null;
-      } else {
-        const newTable = await prisma.restaurantTable.findUnique({
-          where: { tableNumber: table },
+        await prisma.restaurantTable.update({
+          where: { id: tableRecord.id },
+          data: { status: 'OCCUPIED' },
         });
-        if (newTable) {
-          if (existing.tableId && existing.tableId !== newTable.id) {
-            await prisma.restaurantTable.update({
-              where: { id: existing.tableId },
-              data: { status: 'AVAILABLE' },
-            });
-          }
-          await prisma.restaurantTable.update({
-            where: { id: newTable.id },
-            data: { status: 'OCCUPIED' },
-          });
-          tableId = newTable.id;
-        }
+        tableId = tableRecord.id;
       }
+
+      await prisma.orderItem.deleteMany({
+        where: { orderId: existing.id },
+      });
+
+      orderResult = await prisma.order.update({
+        where: { id: existing.id },
+        data: {
+          tableId,
+          userId: existing.userId || userId,
+          customerName: customer !== undefined ? customer.trim() : existing.customerName,
+          orderType: orderType ? mapOrderType(orderType) : existing.orderType,
+          status: status ? mapOrderStatus(status) : existing.status,
+          subtotal,
+          taxRate,
+          taxAmount,
+          discountAmount,
+          totalAmount,
+          orderItems: { create: preparedItems },
+        },
+        include: {
+          table: true,
+          orderItems: { include: { menuItem: true } },
+        },
+      });
+    } else {
+      // Upsert: Create order if not exists
+      const orderCode = id && id.startsWith('ORD-') ? id : await generateUniqueOrderCode();
+      if (tableRecord) {
+        await prisma.restaurantTable.update({
+          where: { id: tableRecord.id },
+          data: { status: 'OCCUPIED' },
+        });
+      }
+
+      orderResult = await prisma.order.create({
+        data: {
+          orderCode,
+          tableId: tableRecord?.id || null,
+          userId,
+          customerName: (customer || `Guest (${tableRecord?.tableNumber || 'Takeaway'})`).trim(),
+          orderType: mapOrderType(orderType),
+          status: mapOrderStatus(status),
+          subtotal,
+          taxRate,
+          taxAmount,
+          discountAmount,
+          totalAmount,
+          orderItems: { create: preparedItems },
+        },
+        include: {
+          table: true,
+          orderItems: { include: { menuItem: true } },
+        },
+      });
     }
 
-    // Delete existing items and recreate with new quantities
-    await prisma.orderItem.deleteMany({
-      where: { orderId: existing.id },
-    });
-
-    const preparedItems = await resolveItemIds(items);
-
-    const updated = await prisma.order.update({
-      where: { id: existing.id },
-      data: {
-        tableId,
-        customerName: customer !== undefined ? customer.trim() : existing.customerName,
-        orderType: orderType ? mapOrderType(orderType) : existing.orderType,
-        status: status ? mapOrderStatus(status) : existing.status,
-        subtotal,
-        taxAmount,
-        discountAmount,
-        totalAmount,
-        orderItems: {
-          create: preparedItems,
-        },
-      },
-      include: {
-        table: true,
-        orderItems: {
-          include: {
-            menuItem: true,
-          },
-        },
-      },
-    });
-
-    res.json(formatOrder(updated));
+    res.json(formatOrder(orderResult));
   } catch (error) {
-    console.error('Update order error:', error);
-    res.status(500).json({ error: 'Failed to update order' });
+    console.error('Update/upsert order error:', error);
+    res.status(500).json({ error: 'Failed to update order: ' + error.message });
   }
 });
 
-// DELETE /api/orders/:id (Delete / Cancel Order)
+// DELETE /api/orders/:id (Idempotent Delete / Cancel Order)
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -300,16 +367,17 @@ router.delete('/:id', async (req, res) => {
         OR: [
           { orderCode: id },
           ...(isNaN(id) ? [] : [{ id: parseInt(id) }]),
+          ...(id.startsWith('T') ? [{ table: { tableNumber: id.toUpperCase() }, status: { in: ['PENDING', 'IN_PROCESS', 'READY'] } }] : []),
         ],
       },
     });
 
     if (!existing) {
-      return res.status(404).json({ error: 'Order not found' });
+      // Idempotent: already deleted
+      return res.json({ message: 'Order already removed or deleted', id });
     }
 
     if (existing.tableId) {
-      // Free table
       await prisma.restaurantTable.update({
         where: { id: existing.tableId },
         data: { status: 'AVAILABLE' },
@@ -317,6 +385,10 @@ router.delete('/:id', async (req, res) => {
     }
 
     await prisma.orderItem.deleteMany({
+      where: { orderId: existing.id },
+    });
+
+    await prisma.payment.deleteMany({
       where: { orderId: existing.id },
     });
 
@@ -335,26 +407,24 @@ router.delete('/:id', async (req, res) => {
 router.post('/:id/pay', async (req, res) => {
   try {
     const { id } = req.params;
-    const { paymentMethod = 'Cash', orderData, table: requestedTable } = req.body;
+    const { paymentMethod = 'Cash', orderData, table: requestedTable, items: directItems } = req.body;
     const validMethod = mapPaymentMethod(paymentMethod);
 
-    // 1. Look up existing order by orderCode, numeric id, or table
+    const targetTableStr = requestedTable || orderData?.table || (id.startsWith('T') ? id : null);
+    const tableRecord = await findTableRecord(targetTableStr);
+
+    // 1. Look up existing order
     let order = await prisma.order.findFirst({
       where: {
         OR: [
           { orderCode: id },
           ...(isNaN(id) ? [] : [{ id: parseInt(id) }]),
-          ...(requestedTable ? [{ table: { tableNumber: requestedTable }, status: { in: ['PENDING', 'IN_PROCESS', 'READY'] } }] : []),
-          ...(id.startsWith('T') ? [{ table: { tableNumber: id }, status: { in: ['PENDING', 'IN_PROCESS', 'READY'] } }] : []),
+          ...(tableRecord ? [{ tableId: tableRecord.id, status: { in: ['PENDING', 'IN_PROCESS', 'READY'] } }] : []),
         ],
       },
       include: {
         table: true,
-        orderItems: {
-          include: {
-            menuItem: true,
-          },
-        },
+        orderItems: { include: { menuItem: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -362,33 +432,44 @@ router.post('/:id/pay', async (req, res) => {
     const settings = await prisma.restaurantSettings.findFirst({ where: { id: 1 } });
     const taxRate = settings ? Number(settings.defaultTaxRate) : 10.0;
     const discountRate = settings ? Number(settings.defaultDiscountRate) : 20.0;
+    const userId = req.user?.id || (req.body.userId ? parseInt(req.body.userId) : null) || 1;
 
-    // 2. If order does NOT exist in DB yet, create it directly
-    if (!order) {
-      const payload = orderData || req.body;
-      const items = payload.items || [];
-      const tableName = requestedTable || payload.table || (id.startsWith('T') ? id : null);
+    const payload = orderData || req.body;
+    const items = (payload.items && payload.items.length > 0) ? payload.items : (directItems || order?.orderItems || []);
 
-      let tableRecord = null;
-      if (tableName && tableName !== 'Takeaway') {
-        tableRecord = await prisma.restaurantTable.findUnique({
-          where: { tableNumber: tableName },
+    const subtotal = items.reduce((sum, item) => sum + Number(item.price || item.unitPrice || 0) * (item.qty || item.quantity || 1), 0);
+    const taxAmount = subtotal * (taxRate / 100);
+    const discountAmount = subtotal * (discountRate / 100);
+    const totalAmount = Math.max(0, subtotal + taxAmount - discountAmount);
+    const preparedItems = await resolveItemIds(items);
+
+    if (order) {
+      if (items.length > 0) {
+        await prisma.orderItem.deleteMany({ where: { orderId: order.id } });
+        order = await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            subtotal,
+            taxAmount,
+            discountAmount,
+            totalAmount,
+            status: 'COMPLETED',
+            orderItems: { create: preparedItems },
+          },
+          include: {
+            table: true,
+            orderItems: { include: { menuItem: true } },
+          },
         });
       }
-
-      const subtotal = items.reduce((sum, item) => sum + Number(item.price || 0) * (item.qty || 1), 0);
-      const taxAmount = subtotal * (taxRate / 100);
-      const discountAmount = subtotal * (discountRate / 100);
-      const totalAmount = Math.max(0, subtotal + taxAmount - discountAmount);
-
-      const orderCode = await generateUniqueOrderCode();
-      const preparedItems = await resolveItemIds(items);
-
+    } else {
+      const orderCode = id && id.startsWith('ORD-') ? id : await generateUniqueOrderCode();
       order = await prisma.order.create({
         data: {
           orderCode,
           tableId: tableRecord?.id || null,
-          customerName: (payload.customer || 'Guest').trim(),
+          userId,
+          customerName: (payload.customer || `Guest (${tableRecord?.tableNumber || 'Takeaway'})`).trim(),
           orderType: mapOrderType(payload.orderType),
           status: 'COMPLETED',
           subtotal,
@@ -396,22 +477,16 @@ router.post('/:id/pay', async (req, res) => {
           taxAmount,
           discountAmount,
           totalAmount,
-          orderItems: {
-            create: preparedItems,
-          },
+          orderItems: { create: preparedItems },
         },
         include: {
           table: true,
-          orderItems: {
-            include: {
-              menuItem: true,
-            },
-          },
+          orderItems: { include: { menuItem: true } },
         },
       });
     }
 
-    // 3. Upsert payment record in PostgreSQL
+    // Upsert payment in PostgreSQL
     await prisma.payment.upsert({
       where: { orderId: order.id },
       update: {
@@ -429,13 +504,13 @@ router.post('/:id/pay', async (req, res) => {
       },
     });
 
-    // 4. Mark order as COMPLETED
+    // Mark order COMPLETED
     await prisma.order.update({
       where: { id: order.id },
       data: { status: 'COMPLETED' },
     });
 
-    // 5. Free the table
+    // Free table
     if (order.tableId) {
       await prisma.restaurantTable.update({
         where: { id: order.tableId },
@@ -444,7 +519,6 @@ router.post('/:id/pay', async (req, res) => {
     }
 
     const formatted = formatOrder(order);
-
     const receipt = {
       orderId: order.orderCode,
       table: formatted.table,
