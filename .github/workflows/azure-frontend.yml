@@ -33,3 +33,4 @@ jobs:
           app_build_command: 'npm run build'
         env:
           VITE_API_URL: 'https://dashpoint-pos-backend-vs.azurewebsites.net'
+
