@@ -155,7 +155,7 @@ export function PosProvider({ children }) {
   // Sync an order with the backend
   const syncOrderWithBackend = async (orderToSync) => {
     try {
-      if (orderToSync.dbId || (orderToSync.id && orderToSync.id.startsWith('ORD-'))) {
+      if (orderToSync.dbId) {
         await api.orders.update(orderToSync.id, orderToSync);
       } else {
         const created = await api.orders.create(orderToSync);
