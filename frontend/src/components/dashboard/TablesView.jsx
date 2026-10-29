@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Loader2 } from 'lucide-react';
 import { usePos } from '../../context/PosContext';
 
 /**
@@ -33,6 +33,8 @@ export default function TablesView({ onSwitchTab }) {
   });
 
   const [formErrors, setFormErrors] = useState({});
+  const [isBooking, setIsBooking] = useState(false);
+  const [deletingResId, setDeletingResId] = useState(null);
 
   const occupiedCount = tables.filter((t) => t.isOccupied).length;
   const vacantCount = 20 - occupiedCount;
@@ -58,25 +60,41 @@ export default function TablesView({ onSwitchTab }) {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isBooking) return;
     if (!validate()) return;
 
-    addReservation({
-      name: formData.name.trim(),
-      table: formData.table,
-      guests: Number(formData.guests),
-      time: formData.time
-    });
+    setIsBooking(true);
+    try {
+      await addReservation({
+        name: formData.name.trim(),
+        table: formData.table,
+        guests: Number(formData.guests),
+        time: formData.time
+      });
 
-    // Reset form
-    setFormData({
-      name: '',
-      table: vacantTables[0]?.id || 'T1',
-      guests: 2,
-      time: '19:00'
-    });
-    setFormErrors({});
+      // Reset form
+      setFormData({
+        name: '',
+        table: vacantTables[0]?.id || 'T1',
+        guests: 2,
+        time: '19:00'
+      });
+      setFormErrors({});
+    } finally {
+      setIsBooking(false);
+    }
+  };
+
+  const handleDeleteReservation = async (id) => {
+    if (deletingResId) return;
+    setDeletingResId(id);
+    try {
+      await deleteReservation(id);
+    } finally {
+      setDeletingResId(null);
+    }
   };
 
   return (
@@ -206,8 +224,20 @@ export default function TablesView({ onSwitchTab }) {
             {formErrors.time && <div className="error-text">{formErrors.time}</div>}
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-            Confirm Reservation
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            disabled={isBooking}
+          >
+            {isBooking ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Confirming Reservation...
+              </>
+            ) : (
+              'Confirm Reservation'
+            )}
           </button>
         </form>
 
@@ -238,11 +268,16 @@ export default function TablesView({ onSwitchTab }) {
                   </div>
                 </div>
                 <button
-                  onClick={() => deleteReservation(res.id)}
+                  onClick={() => handleDeleteReservation(res.id)}
+                  disabled={deletingResId === res.id}
                   style={{ color: 'var(--danger)', padding: '4px' }}
                   title="Cancel reservation"
                 >
-                  <Trash2 size={14} />
+                  {deletingResId === res.id ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={14} />
+                  )}
                 </button>
               </div>
             ))}

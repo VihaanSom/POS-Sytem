@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { usePos } from '../../context/PosContext';
 
 export default function SettingsView() {
@@ -9,11 +10,20 @@ export default function SettingsView() {
     discount: settings.discount,
     currency: settings.currency
   });
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSettings(formSettings);
-    showToast('POS settings saved successfully!', 'success');
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      await setSettings(formSettings);
+      showToast('POS settings saved successfully!', 'success');
+    } catch (err) {
+      showToast('Failed to save settings on server', 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -65,8 +75,20 @@ export default function SettingsView() {
           />
         </div>
 
-        <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>
-          Save Settings
+        <button
+          type="submit"
+          className="btn btn-primary"
+          style={{ marginTop: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Saving Settings...
+            </>
+          ) : (
+            'Save Settings'
+          )}
         </button>
       </form>
     </div>

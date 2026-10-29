@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, Mail, ArrowRight } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Loader2 } from 'lucide-react';
 import { usePos } from '../context/PosContext';
 import api from '../services/api';
 
@@ -72,6 +72,7 @@ export default function LoginPage({ onNavigate }) {
                 type="email"
                 placeholder="name@company.com"
                 value={email}
+                disabled={loading}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
@@ -84,13 +85,28 @@ export default function LoginPage({ onNavigate }) {
               type="password"
               placeholder="••••••••"
               value={password}
+              disabled={loading}
               onChange={(e) => setPassword(e.target.value)}
             />
             {errors.password && <div className="error-text">{errors.password}</div>}
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.85rem' }} disabled={loading}>
-            {loading ? 'Logging in...' : <>Log In to POS <ArrowRight size={16} /></>}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: '100%', padding: '0.85rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Logging In...
+              </>
+            ) : (
+              <>
+                Log In to POS <ArrowRight size={16} />
+              </>
+            )}
           </button>
         </form>
 

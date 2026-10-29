@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Edit2, ShoppingBag, Plus, Minus, Trash2 } from 'lucide-react';
+import { Edit2, ShoppingBag, Plus, Minus, Trash2, Loader2 } from 'lucide-react';
 import { usePos } from '../../context/PosContext';
 
 /**
@@ -30,7 +30,8 @@ export default function BillingSidebar() {
     removeFromCart,
     setOrderType,
     openCreateOrder,
-    payBill
+    payBill,
+    isPaying
   } = usePos();
 
   const [paymentMethod, setPaymentMethod] = useState('Cash');
@@ -62,6 +63,7 @@ export default function BillingSidebar() {
       <div className="order-type-selector">
         <button
           type="button"
+          disabled={isPaying}
           className={`type-btn ${orderType === 'dine-in' ? 'active' : ''}`}
           onClick={() => setOrderType('dine-in')}
         >
@@ -69,6 +71,7 @@ export default function BillingSidebar() {
         </button>
         <button
           type="button"
+          disabled={isPaying}
           className={`type-btn ${orderType === 'take-away' ? 'active' : ''}`}
           onClick={() => setOrderType('take-away')}
         >
@@ -112,6 +115,7 @@ export default function BillingSidebar() {
               <div className="cart-item-controls">
                 <button
                   className="qty-btn"
+                  disabled={isPaying}
                   onClick={() => updateItemQty(item.id, -1)}
                   title="Decrease quantity"
                 >
@@ -120,6 +124,7 @@ export default function BillingSidebar() {
                 <span className="cart-item-qty">{item.qty}</span>
                 <button
                   className="qty-btn"
+                  disabled={isPaying}
                   onClick={() => updateItemQty(item.id, 1)}
                   title="Increase quantity"
                 >
@@ -133,6 +138,7 @@ export default function BillingSidebar() {
               </div>
 
               <button
+                disabled={isPaying}
                 onClick={() => removeFromCart(item.id)}
                 title="Remove item"
                 style={{ color: 'var(--text-muted)', padding: '2px' }}
@@ -185,6 +191,7 @@ export default function BillingSidebar() {
             <button
               key={method}
               type="button"
+              disabled={isPaying}
               className={`payment-pill ${paymentMethod === method ? 'active' : ''}`}
               onClick={() => setPaymentMethod(method)}
             >
@@ -199,11 +206,17 @@ export default function BillingSidebar() {
         <button
           type="button"
           className="btn-pay-bills"
-          disabled={!activeOrder || items.length === 0}
+          disabled={!activeOrder || items.length === 0 || isPaying}
           onClick={() => payBill(paymentMethod)}
         >
-          Pay Bills ({settings.currency}
-          {grandTotal.toFixed(2)})
+          {isPaying ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <Loader2 size={18} className="animate-spin" />
+              Processing Payment...
+            </span>
+          ) : (
+            `Pay Bills (${settings.currency}${grandTotal.toFixed(2)})`
+          )}
         </button>
       </div>
     </aside>

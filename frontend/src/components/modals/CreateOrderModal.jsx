@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Minus, Search } from 'lucide-react';
+import { Plus, Minus, Search, Loader2 } from 'lucide-react';
 import { usePos } from '../../context/PosContext';
 
 export default function CreateOrderModal() {
@@ -23,8 +23,10 @@ export default function CreateOrderModal() {
   const [selectedItems, setSelectedItems] = useState([]);
   const [dishSearch, setDishSearch] = useState('');
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    setIsSubmitting(false);
     if (orderToEdit) {
       setOrderType(orderToEdit.orderType || 'dine-in');
       setCustomer(orderToEdit.customer || '');
@@ -85,8 +87,10 @@ export default function CreateOrderModal() {
 
   const itemsSubtotal = selectedItems.reduce((sum, i) => sum + i.price * i.qty, 0);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     const newErrors = {};
     if (!customer.trim()) newErrors.customer = 'Customer name is required.';
     if (orderType === 'dine-in' && !table) newErrors.table = 'Table is required.';
@@ -96,17 +100,24 @@ export default function CreateOrderModal() {
       return;
     }
 
-    saveOrder({
-      id: orderToEdit?.id,
-      customer: customer.trim(),
-      table: orderType === 'dine-in' ? table : 'Takeaway',
-      orderType,
-      status,
-      guests,
-      phoneOrAddress,
-      notes,
-      items: selectedItems
-    });
+    setIsSubmitting(true);
+    try {
+      await saveOrder({
+        id: orderToEdit?.id,
+        customer: customer.trim(),
+        table: orderType === 'dine-in' ? table : 'Takeaway',
+        orderType,
+        status,
+        guests,
+        phoneOrAddress,
+        notes,
+        items: selectedItems
+      });
+    } catch (err) {
+      // Error handled with toast in context
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -280,11 +291,28 @@ export default function CreateOrderModal() {
           </div>
 
           <div className="modal-footer" style={{ padding: '1rem 0 0' }}>
-            <button type="button" className="btn btn-outline" onClick={closeCreateOrder}>
+            <button
+              type="button"
+              className="btn btn-outline"
+              disabled={isSubmitting}
+              onClick={closeCreateOrder}
+            >
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary">
-              {orderToEdit ? 'Save Changes' : 'Create Order'}
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={isSubmitting}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Saving Order...
+                </>
+              ) : (
+                orderToEdit ? 'Save Changes' : 'Create Order'
+              )}
             </button>
           </div>
         </form>

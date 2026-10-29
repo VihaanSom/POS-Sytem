@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { usePos } from '../../context/PosContext';
 
 export default function AddDishModal() {
@@ -14,6 +15,7 @@ export default function AddDishModal() {
   });
 
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isAddDishOpen) return null;
 
@@ -28,28 +30,34 @@ export default function AddDishModal() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!validate()) return;
 
-    addCustomDish({
-      ...dish,
-      price: parseFloat(dish.price),
-      image:
-        dish.image.trim() ||
-        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80'
-    });
+    setIsSubmitting(true);
+    try {
+      await addCustomDish({
+        ...dish,
+        price: parseFloat(dish.price),
+        image:
+          dish.image.trim() ||
+          'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80'
+      });
 
-    // Reset form
-    setDish({
-      name: '',
-      category: 'burger',
-      price: '',
-      desc: '',
-      image: '',
-      badge: 'New'
-    });
-    setErrors({});
+      // Reset form
+      setDish({
+        name: '',
+        category: 'burger',
+        price: '',
+        desc: '',
+        image: '',
+        badge: 'New'
+      });
+      setErrors({});
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -129,12 +137,25 @@ export default function AddDishModal() {
             <button
               type="button"
               className="btn btn-outline"
+              disabled={isSubmitting}
               onClick={() => setIsAddDishOpen(false)}
             >
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary">
-              Add to Menu
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={isSubmitting}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Adding Dish...
+                </>
+              ) : (
+                'Add to Menu'
+              )}
             </button>
           </div>
         </form>

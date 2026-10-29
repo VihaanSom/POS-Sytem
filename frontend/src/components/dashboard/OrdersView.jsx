@@ -1,13 +1,24 @@
-import React from 'react';
-import { Plus, Edit2, Trash2, ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, Edit2, Trash2, ArrowRight, Loader2 } from 'lucide-react';
 import { usePos } from '../../context/PosContext';
 
 export default function OrdersView({ onSwitchTab }) {
   const { orders, setActiveTable, openCreateOrder, deleteOrder, settings } = usePos();
+  const [deletingOrderId, setDeletingOrderId] = useState(null);
 
   const handleManageOrder = (table) => {
     setActiveTable(table);
     onSwitchTab('menu');
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    if (deletingOrderId) return;
+    setDeletingOrderId(orderId);
+    try {
+      await deleteOrder(orderId);
+    } finally {
+      setDeletingOrderId(null);
+    }
   };
 
   return (
@@ -93,10 +104,15 @@ export default function OrdersView({ onSwitchTab }) {
                         <button
                           className="icon-btn"
                           style={{ width: '32px', height: '32px', color: 'var(--danger)' }}
-                          onClick={() => deleteOrder(order.id)}
+                          disabled={deletingOrderId === order.id}
+                          onClick={() => handleDeleteOrder(order.id)}
                           title="Delete Order"
                         >
-                          <Trash2 size={14} />
+                          {deletingOrderId === order.id ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={14} />
+                          )}
                         </button>
                       </div>
                     </td>

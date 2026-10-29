@@ -1,0 +1,38 @@
+name: Deploy Backend to Azure App Service
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/azure-backend.yml'
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy_backend:
+    runs-on: ubuntu-latest
+    name: Build & Deploy Backend
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies & Generate Prisma
+        working-directory: backend
+        run: |
+          npm ci --omit=dev
+          npx prisma generate
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'dashpoint-pos-backend-vs'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: 'backend'

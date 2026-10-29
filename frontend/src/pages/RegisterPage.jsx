@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import { usePos } from '../context/PosContext';
 import api from '../services/api';
 
@@ -93,6 +93,7 @@ export default function RegisterPage({ onNavigate }) {
               type="text"
               placeholder="e.g. Easton Cox"
               value={formData.name}
+              disabled={loading}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
             {errors.name && <div className="error-text">{errors.name}</div>}
@@ -104,6 +105,7 @@ export default function RegisterPage({ onNavigate }) {
               type="text"
               placeholder="e.g. DashPoint Grand Bistro"
               value={formData.restaurant}
+              disabled={loading}
               onChange={(e) => setFormData({ ...formData, restaurant: e.target.value })}
             />
             {errors.restaurant && <div className="error-text">{errors.restaurant}</div>}
@@ -115,6 +117,7 @@ export default function RegisterPage({ onNavigate }) {
               type="email"
               placeholder="manager@restaurant.com"
               value={formData.email}
+              disabled={loading}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
             {errors.email && <div className="error-text">{errors.email}</div>}
@@ -127,6 +130,7 @@ export default function RegisterPage({ onNavigate }) {
                 type="password"
                 placeholder="••••••••"
                 value={formData.password}
+                disabled={loading}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
               {errors.password && <div className="error-text">{errors.password}</div>}
@@ -138,14 +142,29 @@ export default function RegisterPage({ onNavigate }) {
                 type="password"
                 placeholder="••••••••"
                 value={formData.confirmPassword}
+                disabled={loading}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               />
               {errors.confirmPassword && <div className="error-text">{errors.confirmPassword}</div>}
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.85rem' }} disabled={loading}>
-            {loading ? 'Creating Account...' : <>Create Account &amp; Enter POS <ArrowRight size={16} /></>}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: '100%', padding: '0.85rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Creating Account...
+              </>
+            ) : (
+              <>
+                Create Account &amp; Enter POS <ArrowRight size={16} />
+              </>
+            )}
           </button>
         </form>
 

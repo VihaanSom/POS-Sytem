@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Loader2 } from 'lucide-react';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
 import { usePos } from '../context/PosContext';
@@ -12,14 +12,19 @@ export default function ContactPage({ onNavigate }) {
     subject: '',
     message: ''
   });
+  const [isSending, setIsSending] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSending) return;
     if (!formData.name || !formData.email || !formData.message) {
       showToast('Please fill in all required fields.', 'error');
       return;
     }
 
+    setIsSending(true);
+    await new Promise((r) => setTimeout(r, 600));
+    setIsSending(false);
     showToast('Message sent! Our support team will get back to you shortly.', 'success');
     setFormData({ name: '', email: '', subject: '', message: '' });
   };
@@ -121,8 +126,21 @@ export default function ContactPage({ onNavigate }) {
                 ></textarea>
               </div>
 
-              <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-                <Send size={16} /> Send Inquiry
+              <button
+                type="submit"
+                className="btn btn-primary"
+                style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                disabled={isSending}
+              >
+                {isSending ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" /> Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send size={16} /> Send Inquiry
+                  </>
+                )}
               </button>
             </form>
           </div>

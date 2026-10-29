@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { CATEGORIES } from '../../data/initialData';
 import { usePos } from '../../context/PosContext';
 
@@ -29,7 +29,8 @@ export default function MenuView() {
     addToCart,
     openCreateOrder,
     setIsAddDishOpen,
-    settings
+    settings,
+    isLoadingData
   } = usePos();
 
   // Filter dishes by category and search query
@@ -147,7 +148,12 @@ export default function MenuView() {
           </button>
         </div>
 
-        {filteredDishes.length === 0 ? (
+        {isLoadingData && allDishes.length === 0 ? (
+          <div className="card" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+            <Loader2 size={24} className="animate-spin" style={{ margin: '0 auto 10px', color: 'var(--primary)' }} />
+            <p style={{ color: 'var(--text-muted)' }}>Loading live menu from server...</p>
+          </div>
+        ) : filteredDishes.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
             <p style={{ color: 'var(--text-muted)' }}>No dishes found matching your search or category.</p>
           </div>
